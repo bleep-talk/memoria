@@ -1,0 +1,116 @@
+---
+name: implement-change
+description: Implement a feature, fix, or refactor in an RMS project while preserving module ownership, contracts, effects, compatibility, and focused verification.
+---
+
+# Implement a Change
+
+1. Run the `inspect-module` workflow for the owning module. When the CLI is available, use `rms implement <module> --task "<task>"` to render a bounded implementation prompt before editing when that would help.
+2. For the requested software change, begin with `rms next "<exact change task>" --root . --ai` for recorded typed extraction and ownership routing. Before provider-backed work, run `rms check --environment --root .` when readiness is unknown or the provider, model, or reasoning effort changed. The RMS project model and reasoning effort override provider defaults. RMS verifies both selections against the installed Codex catalog and never silently substitutes either selection. On an unavailable model, unsupported reasoning effort, or upgrade gate, update Codex and recheck or explicitly pin supported `ai.codex.model` and `ai.codex.reasoning_effort` values. On provider failure, repair the provider and rerun the exact task; do not synthesize typed intent automatically. This skill does not apply to read-only investigation, explanation, review, status or history inspection, ordinary Git/repository/tool operations, or discussion that requests no change; use native project tools for those tasks. If read-only work reveals a proposed change, stop before editing and begin this workflow with the exact change task. Use typed intent flags only for CI, offline, or intentionally pre-structured caller input. If the route is non-ready or ownerless, stop the owner-scoped workflow: do not infer an owner from candidates, context, neighboring modules, or implementation language. Obtain an explicit caller decision, model or adopt the boundary, or state that the work is outside RMS coverage. Use `rms design` only when module boundaries change; never infer topology from raw task wording. Build a bounded packet with `rms context`, attach an intentionally deferred implementation with `rms add-binding --route-receipt <RUN_ID>`, and use `rms plan` only after RMS has selected the owner in a ready route.
+   - A ready `implementation-candidate` route for an explicitly identified native realization of an existing contract grants no canonical mutation authority. Do not run `rms spec plan` or `rms implement` for that route. Implement only the project-owned native boundary. Run project-native proof. Let progressive checks report native or outside coverage without claiming RMS certification. If any task-owned promise is not already canonical, stop and rerun `rms next` with that exact semantic change.
+3. Treat RMS as the semantic and architecture gate. If the change needs new laws, contracts, states, commands, events, effects, effect results, replies, rejections, transitions, semantic roles, runnable surfaces, public entrypoints, properties, fuzz targets, behavior bindings, or evidence obligations, run `rms spec plan`, apply the complete `rms/semantic-change/v0.1` object with `rms spec apply --dry-run`, and inspect its final machine, semantic functions, public behavior bindings, and dependency behavior bindings. Every public behavior closes contract -> discharging semantic function -> classified machine cases -> proof; every required capability closes exact consumer -> matching provider contract or explicit external boundary. Then apply and run `rms spec check`. Do not proceed while product semantics remain generic scaffold cases or either chain is unresolved. Spec apply records and hash-seals the exact change and automatically closes every active semantic revision; never edit or delete applied records. Direct manifest edits after apply are drift. Focused `rms machine apply/check` is only for structure after laws, contracts, properties, and evidence obligations are correct. It preserves evidence roles but does not generate replay proof; update and replay those roles after implementation. Use `rms surface apply/check` for runnable entrypoints.
+   - Production implementation bindings use `rms/implementation/v0.2`. For a legacy binding, run receipt-gated `rms binding migrate <implementation.yaml> --to v0.2 --dry-run` after routing. Review the complete candidate, then run write mode. Ambiguous trust, authority, call resolution, or safe facade means no migration and no source edit.
+   - A focused probe-capable `rms/machine-change/v0.1` may set `commands.probe`, `machine.initial_state`, `probe` (`protocol`, `command`, exact `runner`, and stateful `initial_state_function`), and add the runner path as `roles.add[].kind: probe_adapter`. Omit unchanged sections and dry-run before apply.
+   - Never repair canonical manifests, contracts, roles, semantic-function bindings, surfaces, or evidence declarations by direct editing. Use `semantic_functions.add/set/remove` for authority owners, exact symbols, purity, discharged promises, assumptions, and evidence. If RMS cannot express the required semantic change, stop and report the RMS gap instead of bypassing the gate.
+   - Follow the deterministic typed-design scaffold action exactly. Pure reusable libraries are normal standalone modules; only mixed runnable implementations use `unsplit_runnable_justification`.
+   - Treat the rendered RMS plan schema as self-contained. Use `set` to replace generic scaffold semantics and `add`/`remove` for incremental changes; keep `surfaces.set: null` unless replacing the complete runnable surface set, and remove intentional surfaces explicitly by name. Do not inspect sibling projects, prior dogfood runs, RMS source, or generated examples outside the project to infer the schema or borrow semantics.
+4. Restate the requested outcome in the owning context's domain language.
+5. Classify the change:
+   - private implementation;
+   - native realization of existing canonical behavior outside RMS coverage;
+   - invariant or domain-policy change;
+   - public-contract change;
+   - new dependency or effect;
+   - state or migration change;
+   - workflow change.
+6. Define semantic structure before code:
+   - closed variants or ADTs;
+   - validated values;
+   - commands, states, events, and accepted/rejected result types;
+   - command, event, effect, and effect-result envelopes;
+   - transition output, transition records, journal, timeline projection, replay bundle, and first-bad-transition evidence;
+   - semantic properties with input spaces, preconditions, operations, oracles, evidence, and counterexample replay policy for broad laws;
+   - fuzz-style targets for parser, boundary, generated-input, numeric, or external-result surfaces where malformed or adversarial input matters; every realization names an exact runner, generated or exhaustive strategies name a generator, and the runner executes the semantic operation and oracle;
+   - transition boundaries;
+   - parser, port, adapter, trace, and evidence roles.
+   - binding type mappings separately from semantic alternatives;
+   - one classified input ADT over commands, observed events, and effect results for stateful machines;
+   - one-request-one-result effect protocols whenever outcomes can alter subsequent decisions.
+   - execution-derived trace producers that call the real transition-record path and serialize returned records rather than copying declarations.
+   - versioned artifacts and transformations when data changes form or crosses a module boundary;
+   - public protocol automata for ordered cross-module conversations;
+   - resource ownership automata for acquire/use/release/transfer lifecycles;
+   - exact safe facades for privileged, unsafe, or foreign authority;
+   - executable temporal properties with typed observations, `environment` or `search-preference` assumptions, closed always/eventually/precedence/exclusion/at-most-once/bounded-response expressions, and dimensionally valid quantities.
+7. Resolve semantic edge cases before implementation:
+   - invalid commands;
+   - impossible variants;
+   - invalid constructors;
+   - malformed boundary input;
+   - illegal transitions;
+   - terminal-state behavior;
+   - stale or conflicting state;
+   - duplicate or out-of-order external facts;
+   - expected effect failures.
+8. Update the public contract or manifest first when public meaning changes.
+9. Before implementing, decide whether the task requires scope expansion or a module split. If it does, update canonical artifacts before deepening the current module.
+10. Use a probe-first red/green inner loop for behavioral work, then implement inside the owning boundary and inside RMS-declared role files. Small private helpers inside pure role files must stay pure; IO belongs in declared adapter, port, or effect-executor roles as effects plus effect results.
+    - The exception is a ready existing-contract native-realization route that explicitly grants no canonical edit authority. For that route, edit only the project-owned native boundary. Do not invent an RMS role, edit the selected canonical owner, or treat native proof as RMS certification.
+    - For an RMS-owned behavioral change with a declared probe adapter, formulate one public law and obtain one focused failing probe or replayable counterexample before source implementation when the defect or new behavior is observable in the existing semantic model. Use `rms probe <implementation.yaml> --describe`, then one exact input or scenario through the real transition-record path; supply effect results explicitly.
+    - After each meaningful semantic edit, replay that exact focused probe before broader verification. Once it is green, expand only the affected behavioral neighborhood: valid adjacent cases plus stale, duplicate, reordered, cancellation or terminal, and wrong-authority inputs when applicable.
+    - When the change crosses a declared module edge, probe the smallest touched behavioral composition or evaluate and stitch the relevant traces before full verification.
+    - During each edit, run only the narrowest deterministic regression or compile check that can falsify the current hypothesis. Do not rerun unchanged full owning-module verification, affected suites, or progressive gates inside this loop.
+    - For a hardware or distributed failure, the focused loop converges only after one identical signed artifact passes the focused physical smoke on every required target. Once prerequisite safety proof passes and that artifact is ready, install it and run the project-owned smoke promptly. The consumer repository owns the exact signing, installation, device, topology, and evidence procedure.
+    - If the focused physical smoke fails, collect correlated evidence from the same attempt and return to the narrow loop. Do not rerun unchanged broad gates.
+    - Migrations, destructive changes, security-sensitive changes, and changes that cannot safely reach hardware require applicable prerequisite proof before deployment. This exception moves necessary proof earlier; it does not remove the focused smoke or any final gate.
+    - After the focused happy path passes, run full owning-module verification and affected native suites. Then run `rms check --changes`, every returned broader acceptance or hardware gate, the authorized candidate commit, and `rms check --committed`. This cadence does not waive final candidate or release gates.
+    - Do not force artificial red probes for representation-only changes, ownerless or native-only behavior, a missing probe adapter, or behavior outside RMS coverage. Use the narrowest native red/green proof and record the coverage fact. Do not invent an RMS owner.
+    - A probe is diagnostic. It does not replace declared properties, evidence, native proof, or final gates.
+    - In the completion report, state which of focused red probe, exact replay, neighborhood exploration, composition probe, and native fallback ran or was not applicable.
+    - New analyzers and planners use parse/normalize -> pure decision -> closed requests/diagnostics -> one-shot adapter. Keep filesystem discovery, process execution, provider calls, Git inspection, and artifact writes outside the decision core.
+    - Run `rms structure <implementation.yaml>` after changing a semantic function or its reachable call closure. Pure functions must have an empty inferred authority row and no unresolved call. Effectful functions must declare the exact inferred row.
+    - Shared effectful mechanics used by multiple exact executors belong in a declared private `effect_support` role. Keep business sequencing, state construction, transitions, drivers, and runnable/public behavior out of that role.
+    - Do not implement real product behavior only in an undeclared runnable surface while the declared machine remains generic.
+    - Public commands in `module.yaml` must be represented in the declared machine, parser, adapter, transition, representation, or semantic functions.
+    - Runnable surfaces must delegate to an existing declared role or concrete symbol, declare boundary effects or a precise no-effect justification, name a concrete usage document and implementation smoke command, and route through the parser/adapter/boundary before pure decisions.
+    - Reusable modules expose meaning through RMS capabilities/contracts and one declared public facade. Consumers must import the facade or call a contract-shaped entrypoint, not private `representation`, `transition`, parser, adapter, or port role files. Native package manifests are binding evidence only.
+    - Generic `Accept`/`Reject` scaffold commands are not done when the module publishes product-specific commands.
+11. Preserve or strengthen the module's representation:
+   - use algebraic data types, sealed variants, or enums for closed domain alternatives;
+   - use opaque types and validated constructors for values with validity rules;
+   - use explicit result types for expected domain failures;
+   - use schemas and validators at untrusted or versioned boundaries;
+   - use query/projector-produced read models for derived facts; if such public types have private fields and no public constructor, declare them in `architecture.allowed_missing_constructors` and add evidence for the producing query/projector;
+   - use a state model or transition function only when behavior depends on lifecycle order.
+12. Keep representation, pure transitions, boundary parsing, machine drivers, effect executors, and trace/evidence roles separate. Stateful machines dispatch every command, observed event, and effect result through one `transition(state, input)` function. Every branch has a stable transition `case`; every declared case occurs in the declared transition source, no source-only branch invents semantics, and every lifecycle state is reachable from `initial_state`. Expected failures remain in the transition's typed `rejection` channel rather than replies, dummy values, status strings, or provenance labels. Trace provenance names the transition source file and exact case, not a trace YAML file, and every trace record must match that case's exact state change, events, commands, effects, reply, and rejection. Generate records from the real transition path; copied declaration lists are not execution evidence. An effectful stateful machine declares exact `driver_function` and `transition_record_function` callables. The driver calls the record function, retains complete records, advances from `state_after`, and executes only `output.effects`; output-only history is not diagnostic evidence. Effect protocols declare exact `executor_symbol` functions and matching effectful `effect-executor` semantic functions; each executor role names its exact effect and uses a dedicated path separate from transition and machine-driver code. The execution path is runnable callable -> machine driver -> pure transition record -> one-request executor -> typed effect result -> machine driver. The driver owns the whole repeated cycle until reply, rejection, or a declared waiting state; a surface must not loop around a one-step driver, even when its public command name differs from the machine command. Inspectable boundary IO is also an explicit effect protocol with typed results and a dedicated executor; runnable delegation names an exact callable, not merely a file. Every declared message envelope is represented in the binding. Arithmetic over represented transition inputs is checked or bounded and returns explicit rejection for extreme values. Transitions own iteration, retry, compensation, stop/continue policy, and progress; surfaces, adapters, and executors do not hide a second lifecycle loop. Public domain values keep private fields and validated constructors; do not use `allowed_public_field_structs` to exempt them.
+13. When a change touches lifecycle behavior, update laws/contracts/evidence plus the declared state model through RMS spec apply before implementation and make illegal transitions rejected or unrepresentable.
+14. Keep decisions separate from external effects where practical.
+15. Do not introduce undeclared dependencies, effects, or cross-module state mutation. Keep projections passive: they may derive facts and timelines from observed inputs, but they must not emit workflow commands or mutate another module's state.
+16. Add the smallest verification evidence that demonstrates:
+   - affected laws;
+   - contract compatibility;
+   - meaningful success and failure scenarios;
+   - impossible variants, invalid constructors, and illegal transitions when applicable;
+   - boundary behavior when applicable;
+   - property obligations for always/never/bounded/ordered/normalized/parser/numeric laws, including generated input spaces and oracles;
+   - replayable counterexamples for failed generated cases;
+   - transition records, golden timelines, replay bundles, and first-bad-transition diagnostics for stateful or workflow behavior.
+   - artifact compatibility and transformation preservation;
+   - protocol composition plus stitched cross-module causation;
+   - resource closure on every reachable terminal path;
+   - authority containment behind the declared safe facade;
+   - temporal properties using exhaustive, model-checking, static-analysis, sanitizer, or benchmark evidence appropriate to their scope.
+17. Run `rms property check <module.yaml|implementation.yaml>` whenever properties, fuzz targets, parsers, numeric bounds, reusable modules, or generated counterexamples are involved. Update every risk-derived strong lane affected by the change, including canonical `explorations` and historical counterexample replay; use a focused `verification.hunt_exceptions` entry only when a lane is genuinely inapplicable. Evaluate executable temporal properties over real traces; use finite `property search` or `property analyze` only with an explicit probe assembly, and never treat reached bounds as proof. Run `rms property run <implementation.yaml> --profile smoke` for binding-native realizations and `rms property replay <analysis.yaml>` for recorded witnesses, counterexamples, or relationship refutations. Use `rms hunt --dry-run` to inspect expensive lanes without adding them to the fast commit gate.
+    - Use `rms property generate <implementation.yaml> --out <assembly>` when machine-probe v0.2 describes supported JSON Schemas. Keep a manual generator for unsupported schema keywords and custom laws. Schema-valid generation does not replace raw-parser coverage fuzzing.
+18. For reusable modules, run `rms package <module.yaml>` before claiming reuse. It builds, verifies, records the concrete result in declared package evidence, rebuilds, and verifies the final artifact. Use `rms verify-package <package-dir>` for an independent recheck; expected-result prose alone is not package proof.
+19. Run `rms review <module>` before finalizing when a diff exists. Run `rms validate --root <root>`, `rms spec check <module.yaml|implementation.yaml>`, `rms machine check <implementation.yaml>`, `rms property check <module.yaml|implementation.yaml>`, `rms surface check <implementation.yaml> --strict` when runnable surfaces exist, `rms structure <implementation.yaml>` when inner roles changed, and project-native verification from the implementation binding. Use `rms verify <implementation.yaml>` when the binding declares `commands.verify`, or `rms verify <composite-module.yaml>` for composite rollups. Treat `semantic.contract-scaffold-active`, `structure.public-command-not-represented`, `structure.generic-scaffold-command-active`, `structure.native-package-export-mismatch`, `semantic.reusable-capability-missing`, `semantic.reusable-package-evidence-missing`, `semantic.property-without-input-space`, `semantic.property-without-oracle`, `structure.property-target-missing`, `structure.boundary-parser-without-fuzz-property`, and `structure.runnable-surface-*` as architecture-gate failures, not cleanup suggestions. Do not declare implemented modules done while validation reports `evidence.placeholder`, `evidence.bootstrap-active`, `evidence.source-unpinned`, or `evidence.semantic-shape-only` for those modules. Evidence must not claim a current filesystem snapshot or missing Git revision; the committed affected check records candidate provenance, and exhaustive strict audit resolves the complete release revision.
+    - Local completion is binary for the affected delta: `rms check --changes --root <root>` must exit zero before an authorized candidate commit, and `rms check --committed --root <root>` must exit zero after it. These commands select exact RMS owners, add actual reverse consumers only for consumer-visible changes, and separate candidate regressions from unchanged baseline debt. Run every returned project-owned native proof command. Record native and outside-coverage paths without claiming RMS certification or inventing an owner. A failed check is not a manual note, and `review-required` never justifies simplifying away recommended structure.
+    - Release and exhaustive CI use `rms check --all --root <root>`. This strict mode retains full-repository provenance, composition, proof regeneration, and coverage requirements.
+20. Summarize:
+    - changed behavior;
+    - affected contracts and invariants;
+    - representation choices for ADTs, constructors, results, schemas, or state machines;
+    - compatibility impact;
+    - new effects or dependencies;
+    - verification evidence;
+    - operational or migration notes.

@@ -1,0 +1,21 @@
+spec: rms/system/v0.1
+
+system:
+  name: "memoria"
+  version: "0.1.0"
+  purpose: "Provide safe, structured, Git-versioned Markdown memory and deterministic bounded context for agents through a reusable Rust library and CLI."
+
+contexts:
+  - "memoria"
+
+public_interfaces: []
+external_dependencies: []
+workflows: []
+
+invariants: []
+
+compatibility:
+  policy: backward-compatible-within-major
+
+glossary: GLOSSARY.md
+context_map: context-map.yaml
