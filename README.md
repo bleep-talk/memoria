@@ -11,7 +11,23 @@ just package
 
 The source archive in `dist/` contains the complete Cargo workspace. An external crate can depend on `memoria-memory` by path after extraction. The workspace has not been published to crates.io.
 
-See [implementation status](docs/STATUS.md) for completed work, current verification limits, and the next blocker.
+See [implementation status](docs/STATUS.md) for completed work and verification scope.
+
+## Agent skill
+
+[`skills/memoria/SKILL.md`](skills/memoria/SKILL.md) is a portable operating guide for an agent that has access to the `memoria` CLI or public library. It teaches memory placement, hash-based edits, conflict handling, and the boundary between memory data and instructions. The skill is separate from the repository created by `memoria init`.
+
+To make the skill available across projects, copy the same folder to your agent's personal skills directory. For local Codex or Claude Code, run the relevant pair from this checkout:
+
+```sh
+mkdir -p ~/.codex/skills/memoria
+cp skills/memoria/SKILL.md ~/.codex/skills/memoria/
+
+mkdir -p ~/.claude/skills/memoria
+cp skills/memoria/SKILL.md ~/.claude/skills/memoria/
+```
+
+The agent also needs the `memoria` binary on its `PATH` and an explicit memory repository path. For an agent without skill discovery, provide the same `SKILL.md` as instructions. The file grants no filesystem permissions.
 
 ## Product boundary
 
