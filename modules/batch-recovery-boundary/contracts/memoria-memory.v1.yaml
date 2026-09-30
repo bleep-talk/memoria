@@ -1,0 +1,175 @@
+spec: rms/contract/v0.3
+name: memoria-memory
+version: '1'
+kind: capability
+meaning: Native MemoryRepo operations init, open, read, write, delete, exists, list, read_metadata, apply, build_context, tree, status, diff, commit, and log. All operations use host policy and one cooperating-call repository lock. Write, delete, and apply use optimistic expected hashes and a bounded durable journal. Commit is a separate fenced local Git operation.
+semantics:
+  behavior:
+    observability: full
+    observations:
+    - id: outcome-kind
+      source:
+        kind: output
+        pointer: /kind
+      value:
+        variant:
+        - accepted
+        - invalid-request
+        - operation-error
+    assumptions:
+    - id: host-policy-and-storage
+      statement: The host supplies policy and root authority. Successful durability observations require the filesystem to honor the declared flush operations. Advisory locking coordinates cooperating calls only; an external writer can still cause a conflict.
+      evaluation:
+        kind: external
+        property: repository-effect-safety
+    requires:
+    - id: parse-and-policy-check
+      statement: The boundary checks operation syntax, limits, repository form, managed-path membership, and required expected values before admitting a requested operation. The CLI cannot override policy.
+      evaluation:
+        kind: external
+        property: generated-request-validation
+    guarantees:
+    - id: complete-native-operation-set
+      statement: The facade exposes exactly the fifteen named operations. Reads, metadata, listings, context, tree, status, diff, and log observe a locked repository snapshot after recovery. Init establishes a supported repository; open validates and recovers one. Neither operation reports success before required durability is observed.
+      evaluation:
+        kind: external
+        property: public-operation-routing
+    - id: provider-owned-decisions
+      statement: Pure validation, rendering, expected-hash checks, and recovery decisions use the bound provider. The boundary supplies typed observations and does not duplicate those rules.
+      evaluation:
+        kind: external
+        property: provider-decision-routing
+    - id: durable-batch-and-recovery
+      statement: Complete validation precedes a requested mutation. A bounded journal is durable before apply. Completion is durable before success. Recovery rolls back incomplete journals and cleans complete journals. Unexpected external edits produce RecoveryConflict without overwriting the conflicting content.
+      evaluation:
+        kind: external
+        property: crash-and-failure-schedules
+    - id: separate-fenced-commit
+      statement: Only commit publishes a Git commit. It rejects pre-existing staged changes, checks the expected HEAD, uses a conditional reference update, and reconciles uncertain publication before reporting success.
+      evaluation:
+        kind: external
+        property: commit-publication-schedules
+    - id: importable-library
+      statement: A separate Cargo consumer imports memoria-memory through the public MemoryRepo facade. The nested memoria CLI calls that same facade.
+      evaluation:
+        kind: external
+        property: external-consumer-and-cli
+    failures:
+    - id: invalid-input-result
+      statement: Invalid syntax or an invalid operation envelope returns InvalidRequest with no repository effects.
+      evaluation:
+        kind: external
+        property: generated-request-validation
+    - id: typed-operation-error
+      statement: Operational errors include PolicyViolation, UnsupportedRepository, UnsafePath, NotFound, AlreadyExists, ExpectedHashMismatch, JournalLimitExceeded, InvalidJournal, LockUnavailable, IoError, RecoveryRequired, RecoveryConflict, StagedChanges, HeadMismatch, PublicationConflict, PublicationUnknown, and IllegalTransition. Errors disclose whether recovery or publication reconciliation remains necessary. No failed durability or unknown publication becomes success.
+      evaluation:
+        kind: external
+        property: crash-and-failure-schedules
+    cases:
+    - id: operation-accepted
+      statement: The operation returns its typed result after its required phases.
+      when:
+        equals:
+          left:
+            observation: outcome-kind
+          right:
+            literal: accepted
+      outcome:
+        kind: accepted
+        expression:
+          equals:
+            left:
+              observation: outcome-kind
+            right:
+              literal: accepted
+      ensures: []
+      permits:
+        state_changes:
+        - /repository
+        - /journal
+        - /git
+        - /resources
+        events: []
+        effects:
+        - AcquireRepoLock
+        - InspectRepository
+        - InspectJournal
+        - RollbackJournal
+        - CleanupJournal
+        - ReadSnapshot
+        - PersistJournal
+        - ApplyFilesystemPlan
+        - PersistCompletion
+        - InspectGit
+        - PublishCommit
+        - ReconcileCommit
+        - ReleaseRepoLock
+        - cli-io
+    - id: request-invalid
+      statement: Invalid boundary input is rejected before repository effects.
+      when:
+        equals:
+          left:
+            observation: outcome-kind
+          right:
+            literal: invalid-request
+      outcome:
+        kind: rejected
+        category: invalid-request
+        expression:
+          equals:
+            left:
+              observation: outcome-kind
+            right:
+              literal: invalid-request
+      ensures: []
+      permits:
+        state_changes: []
+        events: []
+        effects: []
+    - id: operation-error
+      statement: An admitted operation returns a typed error. Recovery work or a partially applied journal can exist; the error does not claim a no-mutation outcome.
+      when:
+        equals:
+          left:
+            observation: outcome-kind
+          right:
+            literal: operation-error
+      outcome:
+        kind: rejected
+        category: operation-error
+        expression:
+          equals:
+            left:
+              observation: outcome-kind
+            right:
+              literal: operation-error
+      ensures: []
+      permits:
+        state_changes:
+        - /repository
+        - /journal
+        - /git
+        - /resources
+        events: []
+        effects:
+        - AcquireRepoLock
+        - InspectRepository
+        - InspectJournal
+        - RollbackJournal
+        - CleanupJournal
+        - ReadSnapshot
+        - PersistJournal
+        - ApplyFilesystemPlan
+        - PersistCompletion
+        - InspectGit
+        - PublishCommit
+        - ReconcileCommit
+        - ReleaseRepoLock
+        - cli-io
+    invariants: []
+    case_policy:
+      coverage: exhaustive
+      overlap: forbidden
+compatibility:
+  policy: backward-compatible-within-major

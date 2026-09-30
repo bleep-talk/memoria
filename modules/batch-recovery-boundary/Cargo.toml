@@ -1,0 +1,26 @@
+[dependencies.batch-recovery-decisions]
+path = "../batch-recovery-decisions"
+version = "0.1.0"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+git2 = "0.20"
+rustix = { version = "1", features = ["fs"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tempfile = "3"
+uuid = { version = "1", features = ["v4"] }
+
+[dev-dependencies]
+git2 = "0.20"
+serde_json = "1"
+tempfile = "3"
+
+[lib]
+path = "src/lib.rs"
+
+[package]
+edition = "2021"
+name = "memoria-memory"
+publish = false
+version = "0.1.0"

@@ -1,0 +1,3 @@
+# real-process-serialization evidence
+
+`rms property run modules/batch-recovery-boundary/implementation.yaml --profile smoke` selected `two_process_repository_serialization` and the runner passed on macOS arm64. Two child processes use one old content hash. Exactly one write succeeds; the loser exits with the expected stale-precondition code. Other native tests cover lock release after death and recovery conflict. The focused property command passed after the evidence and generator updates. The complete boundary gate remains pending. This record claims only the stated checks.

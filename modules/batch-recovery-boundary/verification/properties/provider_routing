@@ -1,0 +1,3 @@
+# provider-decision-routing evidence
+
+`rms property run modules/batch-recovery-boundary/implementation.yaml --profile smoke` selected `check_provider_routing` and the runner passed on macOS arm64. The finite journal-fact matrix checks each provider fact against the next effect. The focused property command passed after the evidence and generator updates. The complete boundary gate remains pending. This record claims only the stated checks.

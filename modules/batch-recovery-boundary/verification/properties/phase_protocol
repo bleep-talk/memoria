@@ -1,0 +1,3 @@
+# phase-protocol evidence
+
+`rms property run modules/batch-recovery-boundary/implementation.yaml --profile smoke` selected `check_phase_protocol` and the runner passed on macOS arm64. The generated state/fact matrix checks that a successful reply follows release and that file application follows JournalDurable. The focused property command passed after the evidence and generator updates. The complete boundary gate remains pending. This record claims only the stated checks.

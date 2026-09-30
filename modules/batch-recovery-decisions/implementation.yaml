@@ -1,0 +1,593 @@
+spec: rms/implementation/v0.2
+module: batch-recovery-decisions
+binding: rust
+source:
+  root: .
+  public_entrypoint: src/lib.rs
+commands:
+  build: just --justfile justfile build
+  verify: just --justfile justfile verify
+  probe: just --justfile justfile probe "${RMS_PROBE_RUNNER##*#}"
+  trace: just --justfile justfile trace "${RMS_TRACE_RUNNER##*#}"
+  properties: just --justfile justfile properties "${RMS_PROPERTY_RUNNER##*#}"
+  format: just --justfile justfile format
+  exhaustive: cargo +stable test -p batch-recovery-decisions --test exhaustive_transitions exhaustive_transitions -- --exact
+toolchain:
+  cargo_manifest: Cargo.toml
+  package: batch-recovery-decisions
+dependencies:
+  allowed_external_crates:
+  - serde
+  - serde_json
+  - serde_yaml_ng
+  - sha2
+  - thiserror
+  external_crates:
+  - crate: serde
+    package: serde
+    version_requirement: '1'
+  - crate: serde_json
+    package: serde_json
+    version_requirement: '1'
+  - crate: serde_yaml_ng
+    package: serde_yaml_ng
+    version_requirement: '0.10'
+  - crate: sha2
+    package: sha2
+    version_requirement: '0.10'
+  - crate: thiserror
+    package: thiserror
+    version_requirement: '2'
+architecture:
+  shape: workflow
+  public_modules: []
+  allowed_public_field_structs:
+  - BatchRecoveryWorkflowCommandEnvelope
+  - BatchRecoveryWorkflowEventEnvelope
+  - BatchRecoveryWorkflowTransition
+  - BatchRecoveryWorkflowTransitionRecord
+  - BatchRecoveryWorkflowSourceProvenance
+  - BatchRecoveryDecisionsWorkflowSourceProvenance
+  messages:
+    command_envelope:
+    - command_id
+    - target_machine
+    - correlation_id
+    - causation_id
+    - idempotency_key
+    event_envelope:
+    - event_id
+    - source_machine
+    - correlation_id
+    - causation_id
+    - sequence
+    - schema_version
+    - occurred_at
+    subscriptions:
+    - workflow-inputs
+  transition:
+    output:
+    - next_state
+    - events
+    - commands
+    - effects
+    - reply
+    - rejection
+  numeric_safety:
+    validated_arithmetic: checked-or-bounded-or-proven
+  trace:
+    journal: transition-records
+    timeline_projection: transition-records
+    replay_bundle: transition-records
+    first_bad_transition: source-provenance-from-transition-record
+    producers:
+    - id: memoria-decision-trace
+      profile: smoke
+      bundle: verification/traces/memoria_decisions.yaml
+      command: trace
+      runner: tests/trace_producer.rs#produce_memoria_decision_trace
+  reliability:
+    properties:
+    - id: memoria-path-policy-property
+      proves: memoria-path-policy
+      kind: semantic
+      input_space:
+        strategy: generated
+        generator: memory-path-policy-cases
+      operation:
+        kind: semantic-function
+        name: construct-memory-values
+      oracle:
+      - Generate Unicode paths, invalid components, absolute and drive paths, all mutation kinds, and host Policies.
+      - Independent component validation agrees with MemoryPath acceptance; accepted bytes are unchanged.
+      - Default protections reject every mutation touching either protected path, including creation, replacement and deletion.
+      - Document metadata cannot alter host Policy; explicit host overrides have exactly their declared scope.
+      evidence:
+        path: verification/properties/path_policy.md
+      counterexamples:
+        path: verification/counterexamples/path_policy
+      realizations:
+      - profile: smoke
+        strategy: generated-property
+        command: properties
+        generator: tests/path_policy_properties.rs#generate_cases
+        runner: tests/path_policy_properties.rs#path_policy_property
+    - id: memoria-markdown-property
+      proves: memoria-markdown
+      kind: semantic
+      input_space:
+        strategy: generated
+        generator: markdown-frontmatter-cases
+      operation:
+        kind: semantic-function
+        name: parse-memory-markdown
+      oracle:
+      - Generate absent, empty, valid, truncated, duplicate-key, tagged, aliased, deeply nested, and multiple-document frontmatter.
+      - A present description is accepted exactly when its YAML type is string and all other document constraints hold.
+      - Absent metadata is accepted; malformed delimited metadata never silently becomes plain Markdown.
+      - LF and CRLF delimiters preserve original content bytes; reference SHA-256 vectors agree with complete-document hashes.
+      - Limit exhaustion and invalid UTF-8 produce typed rejection without panic.
+      evidence:
+        path: verification/properties/markdown.md
+      counterexamples:
+        path: verification/counterexamples/markdown
+      realizations:
+      - profile: smoke
+        strategy: generated-property
+        command: properties
+        generator: tests/markdown_properties.rs#generate_cases
+        runner: tests/markdown_properties.rs#markdown_property
+    - id: memoria-rendering-property
+      proves: memoria-complete-rendering
+      kind: semantic
+      input_space:
+        strategy: generated
+        generator: working-snapshot-cases
+      operation:
+        kind: semantic-function
+        name: render-memory
+      oracle:
+      - Permutations of a valid snapshot produce identical context bytes and tree entries.
+      - An independent UTF-8 byte ordering oracle agrees with emitted order, including non-ASCII paths.
+      - Decoding context yields exactly all eligible system Markdown with path, parsed metadata and exact body and no history substitution.
+      - Independently assembled compact JSON bytes agree exactly, including escaping and fixed key order.
+      - Budgets one byte below, equal to, and one byte above the complete encoded length have the specified outcomes.
+      - Invalid eligible entries and duplicate paths reject the complete result; no truncated or partial output is returned.
+      - Tree output contains each permitted file and derived directory once and retains all four conventional roots.
+      evidence:
+        path: verification/properties/rendering.md
+      counterexamples:
+        path: verification/counterexamples/rendering
+      realizations:
+      - profile: smoke
+        strategy: generated-property
+        command: properties
+        generator: tests/rendering_properties.rs#generate_cases
+        runner: tests/rendering_properties.rs#rendering_property
+    - id: memoria-total-decision-property
+      proves: memoria-pure-reuse
+      kind: semantic
+      input_space:
+        strategy: generated
+        generator: public-memory-requests
+      operation:
+        kind: semantic-function
+        name: transition-model
+      oracle:
+      - Generate valid and invalid payloads for every public request and machine state.
+      - Equal explicit inputs produce identical outputs and logical transition records.
+      - Every result has exactly one reply or rejection; a rejection never occupies the reply channel.
+      - Rejections preserve state and contain no plan, effects, or events.
+      - Public-facade consumer tests exercise all operations through the declared public facade without private-module imports.
+      - Audit the public call graph and dependency features for filesystem, Git, clock, environment, network, and native execution access.
+      - Package metadata, allowlists, and justfile host commands match the declared requirements; binding drift fails verification.
+      - Each saved counterexample replays through the same operation and independent oracle.
+      evidence:
+        path: verification/properties/pure_reuse.md
+      counterexamples:
+        path: verification/counterexamples/pure_reuse
+      realizations:
+      - profile: smoke
+        strategy: generated-property
+        command: properties
+        generator: tests/public_capability_properties.rs#generate_requests
+        runner: tests/public_capability_properties.rs#public_capability_property
+    - id: memoria-recovery-property
+      proves: memoria-safe-batch-recovery
+      kind: semantic
+      input_space:
+        strategy: generated
+        generator: batch-recovery-histories
+      operation:
+        kind: semantic-function
+        name: transition-model
+      oracle:
+      - Generate batches, stale snapshots, duplicate touched paths, all recovery stages, and interruption points around each durable operation.
+      - An independent in-memory boundary model checks plan preconditions again before each modeled mutation.
+      - Any invalid batch rejects atomically with unchanged state and no plan; no valid prefix is emitted.
+      - Before durable completion recovery chooses rollback; after durable completion it chooses cleanup; unknown durability requests observation only.
+      - Inject foreign artifacts, changed hashes, missing backups, partial application, lost acknowledgments, and corrected observations.
+      - Unexpected recovery contents never authorize overwriting or deleting unrelated bytes.
+      - Replaying the same valid observation is idempotent; stale and contradictory observations reject without advancement.
+      - A modeled execution that obeys boundary obligations restores all originals or retains all desired contents before settlement.
+      - Enumerate every machine state and command category; each combination selects exactly one transition case.
+      - Validate external assumptions as explicit model inputs; these tests do not claim proof of an unavailable native boundary.
+      evidence:
+        path: verification/properties/recovery.md
+      counterexamples:
+        path: verification/counterexamples/recovery
+      realizations:
+      - profile: smoke
+        strategy: generated-property
+        command: properties
+        generator: tests/recovery_properties.rs#generate_histories
+        runner: tests/recovery_properties.rs#recovery_property
+      - profile: nightly
+        strategy: deterministic-exhaustive
+        command: exhaustive
+        generator: tests/exhaustive_transitions.rs#generate_cases
+        runner: tests/exhaustive_transitions.rs#exhaustive_transitions
+        exhaustive: true
+      - profile: ci
+        strategy: integration-test
+        command: exhaustive
+        runner: modules/batch-recovery-decisions/tests/exhaustive_transitions.rs#exhaustive_transitions
+        owner_module: batch-recovery-decisions
+        package: batch-recovery-decisions
+        working_directory: modules/batch-recovery-decisions
+        test_selection: exhaustive_transitions
+  probe:
+    protocol: rms/machine-probe/v0.2
+    command: probe
+    runner: tests/machine_probe.rs#probe_machine
+    initial_state_function: src/representation.rs#initial_state
+    mappers: []
+  machine:
+    name: BatchRecoveryWorkflowMachine
+    mode: stateful-transition-machine
+    transition_signature: state-and-input
+    initial_state: Ready
+    transitions:
+    - from: Ready
+      on: DecideMemory
+      to: Ready
+      case: ready_memory_valid
+      reply: MemoryDecision
+    - from: Ready
+      on: DecideMemory
+      to: Ready
+      case: ready_memory_invalid
+      rejection: MemoryRejected
+    - from: Ready
+      on: BeginBatch
+      to: BatchPending
+      case: begin_valid_batch
+      reply: BatchPlan
+    - from: Ready
+      on: BeginBatch
+      to: Ready
+      case: begin_invalid_batch
+      rejection: MemoryRejected
+    - from: Ready
+      on: ObserveRecovery
+      to: Ready
+      case: observe_without_batch
+      rejection: IllegalTransition
+    - from: Ready
+      on: ResumeRecovery
+      to: BatchPending
+      case: resume_valid_recovery
+      reply: BatchPlan
+    - from: Ready
+      on: ResumeRecovery
+      to: Ready
+      case: resume_invalid_recovery
+      rejection: MemoryRejected
+    - from: BatchPending
+      on: DecideMemory
+      to: BatchPending
+      case: pending_memory_valid
+      reply: MemoryDecision
+    - from: BatchPending
+      on: DecideMemory
+      to: BatchPending
+      case: pending_memory_invalid
+      rejection: MemoryRejected
+    - from: BatchPending
+      on: BeginBatch
+      to: BatchPending
+      case: overlapping_batch
+      rejection: IllegalTransition
+    - from: BatchPending
+      on: ObserveRecovery
+      to: BatchPending
+      case: observation_advances_stage
+      reply: BatchPlan
+    - from: BatchPending
+      on: ObserveRecovery
+      to: BatchPending
+      case: observation_requires_reinspection
+      reply: BatchPlan
+    - from: BatchPending
+      on: ObserveRecovery
+      to: BatchPending
+      case: observation_duplicate
+      reply: BatchPlan
+    - from: BatchPending
+      on: ObserveRecovery
+      to: BatchPending
+      case: observation_invalid
+      rejection: MemoryRejected
+    - from: BatchPending
+      on: ObserveRecovery
+      to: Completed
+      case: cleanup_confirmed
+      reply: BatchSettled
+    - from: BatchPending
+      on: ResumeRecovery
+      to: BatchPending
+      case: pending_resume_valid
+      reply: BatchPlan
+    - from: BatchPending
+      on: ResumeRecovery
+      to: BatchPending
+      case: pending_resume_invalid
+      rejection: MemoryRejected
+    - from: Completed
+      on: DecideMemory
+      to: Completed
+      case: completed_memory_valid
+      reply: MemoryDecision
+    - from: Completed
+      on: DecideMemory
+      to: Completed
+      case: completed_memory_invalid
+      rejection: MemoryRejected
+    - from: Completed
+      on: BeginBatch
+      to: Completed
+      case: completed_begin_illegal
+      rejection: IllegalTransition
+    - from: Completed
+      on: ObserveRecovery
+      to: Completed
+      case: terminal_observation_duplicate
+      reply: BatchSettled
+    - from: Completed
+      on: ObserveRecovery
+      to: Completed
+      case: terminal_observation_illegal
+      rejection: IllegalTransition
+    - from: Completed
+      on: ResumeRecovery
+      to: Completed
+      case: completed_resume_illegal
+      rejection: IllegalTransition
+    transition_record_function: transition_record
+    types:
+      state: BatchRecoveryWorkflowState
+      input: BatchRecoveryWorkflowInput
+      command: BatchRecoveryWorkflowCommand
+      command_envelope: BatchRecoveryWorkflowCommandEnvelope
+      event: BatchRecoveryWorkflowEvent
+      event_envelope: BatchRecoveryWorkflowEventEnvelope
+      transition_record: BatchRecoveryWorkflowTransitionRecord
+      transition: BatchRecoveryWorkflowTransition
+      rejection: BatchRecoveryWorkflowRejection
+      reply: BatchRecoveryWorkflowReply
+    states:
+    - Ready
+    - BatchPending
+    - Completed
+    commands:
+    - DecideMemory
+    - BeginBatch
+    - ObserveRecovery
+    - ResumeRecovery
+    observed_events: []
+    events: []
+    effects: []
+    effect_results: []
+    replies:
+    - MemoryDecision
+    - BatchPlan
+    - BatchSettled
+    rejections:
+    - MemoryRejected
+    - IllegalTransition
+    effect_protocols: []
+    resource_protocols: []
+    transition_function: transition
+  public_behavior_bindings:
+  - id: resolve-batch-recovery-capability-public
+    public_kind: capability
+    public_name: resolve-batch-recovery-capability
+    contract: contracts/resolve-batch-recovery-capability.v1.yaml
+    semantic_function: transition-model
+    machine_inputs:
+    - DecideMemory
+    - BeginBatch
+    - ObserveRecovery
+    - ResumeRecovery
+    machine_outputs:
+    - MemoryDecision
+    - BatchPlan
+    - BatchSettled
+    - MemoryRejected
+    - IllegalTransition
+    observation_source:
+      kind: transition-record
+      command: trace
+  - id: resolve-batch-recovery-public
+    public_kind: command
+    public_name: resolve-batch-recovery
+    contract: contracts/resolve-batch-recovery.v1.yaml
+    semantic_function: transition-model
+    machine_inputs:
+    - DecideMemory
+    - BeginBatch
+    - ObserveRecovery
+    - ResumeRecovery
+    machine_outputs:
+    - MemoryDecision
+    - BatchPlan
+    - BatchSettled
+    - MemoryRejected
+    - IllegalTransition
+    observation_source:
+      kind: transition-record
+      command: trace
+  representation:
+    closed_variants:
+    - BatchRecoveryWorkflowState
+    - BatchRecoveryWorkflowCommand
+    - BatchRecoveryWorkflowCommandEnvelope
+    - BatchRecoveryWorkflowEvent
+    - BatchRecoveryWorkflowEventEnvelope
+    - BatchRecoveryWorkflowReply
+    - BatchRecoveryWorkflowRejection
+    - BatchRecoveryWorkflowTransition
+    - BatchRecoveryWorkflowTransitionRecord
+    - BatchRecoveryWorkflowSourceProvenance
+    - BatchRecoveryWorkflowInput
+    validated_values:
+    - MemoryPath
+    - Policy
+    - MarkdownDocument
+    - ContentHash
+    transition_functions:
+    - transition
+  roles:
+    build_support:
+    - justfile
+    content_hash:
+    - src/content_hash.rs
+    counterexample_replay:
+    - tests/path_policy_properties.rs
+    - tests/markdown_properties.rs
+    - tests/rendering_properties.rs
+    - tests/recovery_properties.rs
+    - tests/public_capability_properties.rs
+    journal:
+    - src/transition.rs
+    message_envelope:
+    - src/representation.rs
+    package_manifest:
+    - Cargo.toml
+    parser:
+    - src/markdown.rs
+    probe_adapter:
+    - tests/machine_probe.rs
+    projector:
+    - src/rendering.rs
+    property_generator:
+    - tests/path_policy_properties.rs
+    - tests/markdown_properties.rs
+    - tests/rendering_properties.rs
+    - tests/recovery_properties.rs
+    - tests/public_capability_properties.rs
+    property_oracle:
+    - tests/path_policy_properties.rs
+    - tests/markdown_properties.rs
+    - tests/rendering_properties.rs
+    - tests/recovery_properties.rs
+    - tests/public_capability_properties.rs
+    public_facade:
+    - src/lib.rs
+    replay_bundle:
+    - src/transition.rs
+    representation:
+    - src/representation.rs
+    - src/memory_path.rs
+    - src/policy.rs
+    - src/batch_plan.rs
+    - src/recovery.rs
+    timeline_projection:
+    - src/transition.rs
+    trace_evidence:
+    - verification/laws/pure_reuse.md
+    trace_producer:
+    - tests/trace_producer.rs
+    transition:
+    - src/transition.rs
+    transition_record:
+    - src/transition.rs
+semantic_functions:
+- id: transition-model
+  symbol: src/transition.rs#transition
+  kind: transition
+  purity: pure
+  trust: internal
+  discharges:
+    contracts:
+    - contracts/resolve-batch-recovery-capability.v1.yaml
+    - contracts/resolve-batch-recovery.v1.yaml
+    invariants:
+    - memoria-safe-batch-recovery
+    - memoria-pure-reuse
+  evidence:
+    properties:
+    - verification/properties/recovery.md
+    - verification/properties/pure_reuse.md
+  authorities: []
+- id: construct-memory-values
+  symbol: src/memory_path.rs#construct_memory_values
+  kind: constructor
+  purity: pure
+  trust: internal
+  discharges:
+    invariants:
+    - memoria-path-policy
+  evidence:
+    properties:
+    - verification/properties/path_policy.md
+  authorities: []
+- id: parse-memory-markdown
+  symbol: src/markdown.rs#parse_markdown
+  kind: parser
+  purity: pure
+  trust: internal
+  discharges:
+    invariants:
+    - memoria-markdown
+  evidence:
+    properties:
+    - verification/properties/markdown.md
+  authorities: []
+- id: render-memory
+  symbol: src/rendering.rs#render_memory
+  kind: constructor
+  purity: pure
+  trust: internal
+  discharges:
+    invariants:
+    - memoria-complete-rendering
+  evidence:
+    properties:
+    - verification/properties/rendering.md
+  authorities: []
+- id: content-hash
+  symbol: src/content_hash.rs#hash_content
+  kind: transformation
+  purity: pure
+  trust: internal
+  evidence:
+    properties:
+    - verification/properties/markdown.md
+    - verification/properties/recovery.md
+  authorities: []
+- id: memory-transition-record
+  symbol: src/transition.rs#transition_record
+  kind: projector
+  purity: pure
+  trust: internal
+  evidence:
+    properties:
+    - verification/properties/pure_reuse.md
+  authorities: []
+x-rms:
+  semantic_revision:
+    digest: sha256:bac0663278e1b7d6e8f28ddd218e064235ef8a27c6f341d05498640309bf536f
+    change_record: verification/changes/record-the-passing-finite-state-matrix-as-an-exact-selected-nightly-and-ci-proof-bb1b3999f523.yaml
+    change_record_digest: sha256:bb1b3999f5230d9dba84d4ef85fecd3d1152d46b7c70f1365d9560139cb73a44
+    applied_by: rms spec apply

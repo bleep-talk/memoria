@@ -1,0 +1,535 @@
+{
+  "machine": "BatchRecoveryWorkflowMachine",
+  "records": [
+    {
+      "input": {
+        "data": {},
+        "kind": "command",
+        "name": "DecideMemory"
+      },
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": "Ready",
+        "rejection": "MemoryRejected",
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "ready_memory_invalid",
+        "file": "src/transition.rs",
+        "function": "transition"
+      },
+      "state_after": "Ready",
+      "state_before": "Ready"
+    },
+    {
+      "input": {
+        "data": {},
+        "kind": "command",
+        "name": "DecideMemory"
+      },
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": "Ready",
+        "rejection": null,
+        "reply": "MemoryDecision"
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "ready_memory_valid",
+        "file": "src/transition.rs",
+        "function": "transition"
+      },
+      "state_after": "Ready",
+      "state_before": "Ready"
+    },
+    {
+      "input": {
+        "data": {},
+        "kind": "command",
+        "name": "BeginBatch"
+      },
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": "BatchPending",
+        "rejection": null,
+        "reply": "BatchPlan"
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "begin_valid_batch",
+        "file": "src/transition.rs",
+        "function": "transition"
+      },
+      "state_after": "BatchPending",
+      "state_before": "Ready"
+    },
+    {
+      "input": {
+        "data": {},
+        "kind": "command",
+        "name": "BeginBatch"
+      },
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": "Ready",
+        "rejection": "MemoryRejected",
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "begin_invalid_batch",
+        "file": "src/transition.rs",
+        "function": "transition"
+      },
+      "state_after": "Ready",
+      "state_before": "Ready"
+    },
+    {
+      "input": {
+        "data": {},
+        "kind": "command",
+        "name": "ObserveRecovery"
+      },
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": "Ready",
+        "rejection": "IllegalTransition",
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "observe_without_batch",
+        "file": "src/transition.rs",
+        "function": "transition"
+      },
+      "state_after": "Ready",
+      "state_before": "Ready"
+    },
+    {
+      "input": {
+        "data": {},
+        "kind": "command",
+        "name": "ResumeRecovery"
+      },
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": "BatchPending",
+        "rejection": null,
+        "reply": "BatchPlan"
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "resume_valid_recovery",
+        "file": "src/transition.rs",
+        "function": "transition"
+      },
+      "state_after": "BatchPending",
+      "state_before": "Ready"
+    },
+    {
+      "input": {
+        "data": {},
+        "kind": "command",
+        "name": "ResumeRecovery"
+      },
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": "Ready",
+        "rejection": "MemoryRejected",
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "resume_invalid_recovery",
+        "file": "src/transition.rs",
+        "function": "transition"
+      },
+      "state_after": "Ready",
+      "state_before": "Ready"
+    },
+    {
+      "input": {
+        "data": {},
+        "kind": "command",
+        "name": "DecideMemory"
+      },
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": "BatchPending",
+        "rejection": "MemoryRejected",
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "pending_memory_invalid",
+        "file": "src/transition.rs",
+        "function": "transition"
+      },
+      "state_after": "BatchPending",
+      "state_before": "BatchPending"
+    },
+    {
+      "input": {
+        "data": {},
+        "kind": "command",
+        "name": "DecideMemory"
+      },
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": "BatchPending",
+        "rejection": null,
+        "reply": "MemoryDecision"
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "pending_memory_valid",
+        "file": "src/transition.rs",
+        "function": "transition"
+      },
+      "state_after": "BatchPending",
+      "state_before": "BatchPending"
+    },
+    {
+      "input": {
+        "data": {},
+        "kind": "command",
+        "name": "BeginBatch"
+      },
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": "BatchPending",
+        "rejection": "IllegalTransition",
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "overlapping_batch",
+        "file": "src/transition.rs",
+        "function": "transition"
+      },
+      "state_after": "BatchPending",
+      "state_before": "BatchPending"
+    },
+    {
+      "input": {
+        "data": {},
+        "kind": "command",
+        "name": "ObserveRecovery"
+      },
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": "BatchPending",
+        "rejection": null,
+        "reply": "BatchPlan"
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "observation_advances_stage",
+        "file": "src/transition.rs",
+        "function": "transition"
+      },
+      "state_after": "BatchPending",
+      "state_before": "BatchPending"
+    },
+    {
+      "input": {
+        "data": {},
+        "kind": "command",
+        "name": "ObserveRecovery"
+      },
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": "BatchPending",
+        "rejection": null,
+        "reply": "BatchPlan"
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "observation_requires_reinspection",
+        "file": "src/transition.rs",
+        "function": "transition"
+      },
+      "state_after": "BatchPending",
+      "state_before": "BatchPending"
+    },
+    {
+      "input": {
+        "data": {},
+        "kind": "command",
+        "name": "ObserveRecovery"
+      },
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": "BatchPending",
+        "rejection": "MemoryRejected",
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "observation_invalid",
+        "file": "src/transition.rs",
+        "function": "transition"
+      },
+      "state_after": "BatchPending",
+      "state_before": "BatchPending"
+    },
+    {
+      "input": {
+        "data": {},
+        "kind": "command",
+        "name": "ResumeRecovery"
+      },
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": "BatchPending",
+        "rejection": null,
+        "reply": "BatchPlan"
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "pending_resume_valid",
+        "file": "src/transition.rs",
+        "function": "transition"
+      },
+      "state_after": "BatchPending",
+      "state_before": "BatchPending"
+    },
+    {
+      "input": {
+        "data": {},
+        "kind": "command",
+        "name": "ResumeRecovery"
+      },
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": "BatchPending",
+        "rejection": "MemoryRejected",
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "pending_resume_invalid",
+        "file": "src/transition.rs",
+        "function": "transition"
+      },
+      "state_after": "BatchPending",
+      "state_before": "BatchPending"
+    },
+    {
+      "input": {
+        "data": {},
+        "kind": "command",
+        "name": "ObserveRecovery"
+      },
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": "BatchPending",
+        "rejection": null,
+        "reply": "BatchPlan"
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "observation_duplicate",
+        "file": "src/transition.rs",
+        "function": "transition"
+      },
+      "state_after": "BatchPending",
+      "state_before": "BatchPending"
+    },
+    {
+      "input": {
+        "data": {},
+        "kind": "command",
+        "name": "ObserveRecovery"
+      },
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": "Completed",
+        "rejection": null,
+        "reply": "BatchSettled"
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "cleanup_confirmed",
+        "file": "src/transition.rs",
+        "function": "transition"
+      },
+      "state_after": "Completed",
+      "state_before": "BatchPending"
+    },
+    {
+      "input": {
+        "data": {},
+        "kind": "command",
+        "name": "DecideMemory"
+      },
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": "Completed",
+        "rejection": "MemoryRejected",
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "completed_memory_invalid",
+        "file": "src/transition.rs",
+        "function": "transition"
+      },
+      "state_after": "Completed",
+      "state_before": "Completed"
+    },
+    {
+      "input": {
+        "data": {},
+        "kind": "command",
+        "name": "DecideMemory"
+      },
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": "Completed",
+        "rejection": null,
+        "reply": "MemoryDecision"
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "completed_memory_valid",
+        "file": "src/transition.rs",
+        "function": "transition"
+      },
+      "state_after": "Completed",
+      "state_before": "Completed"
+    },
+    {
+      "input": {
+        "data": {},
+        "kind": "command",
+        "name": "BeginBatch"
+      },
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": "Completed",
+        "rejection": "IllegalTransition",
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "completed_begin_illegal",
+        "file": "src/transition.rs",
+        "function": "transition"
+      },
+      "state_after": "Completed",
+      "state_before": "Completed"
+    },
+    {
+      "input": {
+        "data": {},
+        "kind": "command",
+        "name": "ObserveRecovery"
+      },
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": "Completed",
+        "rejection": "IllegalTransition",
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "terminal_observation_illegal",
+        "file": "src/transition.rs",
+        "function": "transition"
+      },
+      "state_after": "Completed",
+      "state_before": "Completed"
+    },
+    {
+      "input": {
+        "data": {},
+        "kind": "command",
+        "name": "ObserveRecovery"
+      },
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": "Completed",
+        "rejection": null,
+        "reply": "BatchSettled"
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "terminal_observation_duplicate",
+        "file": "src/transition.rs",
+        "function": "transition"
+      },
+      "state_after": "Completed",
+      "state_before": "Completed"
+    },
+    {
+      "input": {
+        "data": {},
+        "kind": "command",
+        "name": "ResumeRecovery"
+      },
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": "Completed",
+        "rejection": "IllegalTransition",
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "completed_resume_illegal",
+        "file": "src/transition.rs",
+        "function": "transition"
+      },
+      "state_after": "Completed",
+      "state_before": "Completed"
+    }
+  ],
+  "spec": "rms/trace-bundle/v0.1"
+}

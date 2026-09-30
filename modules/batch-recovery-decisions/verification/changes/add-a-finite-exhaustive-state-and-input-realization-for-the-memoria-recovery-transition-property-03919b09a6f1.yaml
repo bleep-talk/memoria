@@ -1,0 +1,86 @@
+spec: rms/semantic-change/v0.1
+module: modules/batch-recovery-decisions/module.yaml
+supersedes:
+- verification/changes/align-memoria-contract-observations-with-the-typed-reply-and-rejection-channels-preserve-all-approved-behavior-and-inter-0449992f2b2a.yaml
+intent:
+  summary: Add a finite exhaustive state and input realization for the Memoria recovery transition property.
+declaration: null
+laws: null
+contracts: null
+properties:
+  add: []
+  set:
+  - id: memoria-recovery-property
+    proves: memoria-safe-batch-recovery
+    kind: semantic
+    subject: null
+    input_space:
+      strategy: generated
+      generator: batch-recovery-histories
+    preconditions: []
+    operation:
+      kind: semantic-function
+      name: transition-model
+    oracle:
+    - Generate batches, stale snapshots, duplicate touched paths, all recovery stages, and interruption points around each durable operation.
+    - An independent in-memory boundary model checks plan preconditions again before each modeled mutation.
+    - Any invalid batch rejects atomically with unchanged state and no plan; no valid prefix is emitted.
+    - Before durable completion recovery chooses rollback; after durable completion it chooses cleanup; unknown durability requests observation only.
+    - Inject foreign artifacts, changed hashes, missing backups, partial application, lost acknowledgments, and corrected observations.
+    - Unexpected recovery contents never authorize overwriting or deleting unrelated bytes.
+    - Replaying the same valid observation is idempotent; stale and contradictory observations reject without advancement.
+    - A modeled execution that obeys boundary obligations restores all originals or retains all desired contents before settlement.
+    - Enumerate every machine state and command category; each combination selects exactly one transition case.
+    - Validate external assumptions as explicit model inputs; these tests do not claim proof of an unavailable native boundary.
+    evidence:
+      kind: property
+      path: verification/properties/recovery.md
+    counterexamples:
+      path: verification/counterexamples/recovery
+    realizations:
+    - profile: smoke
+      strategy: generated-property
+      command: properties
+      generator: tests/recovery_properties.rs#generate_histories
+      runner: tests/recovery_properties.rs#recovery_property
+      exhaustive: false
+      owner_module: null
+      package: null
+      working_directory: null
+      test_selection: null
+    - profile: nightly
+      strategy: deterministic-exhaustive
+      command: properties
+      generator: tests/exhaustive_transitions.rs#generate_cases
+      runner: tests/exhaustive_transitions.rs#exhaustive_transitions
+      exhaustive: true
+      owner_module: null
+      package: null
+      working_directory: null
+      test_selection: null
+    explorations: []
+    observations: []
+    observability: null
+    assumptions: []
+    temporal: null
+  remove: []
+hunt_exceptions: null
+proof_delegations: null
+trace_producers: null
+probe: null
+semantic_functions: null
+implementation_commands: null
+machine: null
+roles: null
+representation: null
+allowed_missing_constructors: null
+evidence: null
+surfaces: null
+binding_dependencies: null
+artifacts: null
+transformations: null
+authorities: null
+protocol_bindings: null
+authority_bindings: null
+public_behavior_bindings: null
+dependency_behavior_bindings: null

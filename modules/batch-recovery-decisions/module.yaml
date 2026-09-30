@@ -1,0 +1,339 @@
+spec: rms/module/v0.1
+module:
+  name: batch-recovery-decisions
+  version: 0.1.0
+  kind: module
+  purpose: Provide reusable pure Memoria validation, rendering, mutation planning, and recoverable batch decisions.
+profiles:
+- core
+- workflow
+owns:
+  concepts:
+  - MemoryPath
+  - host-owned Policy
+  - Markdown document
+  - content hash precondition
+  - working-tree snapshot
+  - context projection
+  - tree projection
+  - batch plan
+  - recovery observation
+  - recovery stage
+  data:
+  - validated relative paths
+  - validated Markdown and optional metadata
+  - deterministic JSON context bytes
+  - deterministic tree entries
+  - typed mutation and recovery plans
+  - pure batch lifecycle state
+  - transition records
+  decisions:
+  - path and document acceptance
+  - policy-controlled mutation acceptance
+  - hash precondition satisfaction
+  - complete context budget acceptance
+  - batch preparation and continuation
+  - rollback or cleanup selection
+  - recovery observation acceptance
+provides:
+  commands:
+  - name: resolve-batch-recovery
+    contract: contracts/resolve-batch-recovery.v1.yaml
+  queries: []
+  events: []
+  capabilities:
+  - name: resolve-batch-recovery-capability
+    contract: contracts/resolve-batch-recovery-capability.v1.yaml
+requires:
+  modules: []
+  capabilities: []
+invariants:
+- id: memoria-path-policy
+  statement: |
+    MemoryPath is a nonempty UTF-8 slash-separated relative path. Reject
+    absolute paths, backslashes, drive-qualified paths, NUL, control
+    characters, empty components, '.' and '..' components. Reject rather
+    than silently normalize. Compare path identity by exact UTF-8 bytes.
+    The conventional roots are system, knowledge, skills, conversations.
+    Other valid roots are permitted only by an explicit host Policy.
+    Policy is immutable caller-supplied data; document content cannot
+    change it. Default Policy protects system/identity.md and
+    system/policy.md from create, replace, and delete.
+    A host-supplied Policy may explicitly change those protections.
+  kind: safety
+  authority: constructor
+  enforced_by: construct-memory-values
+- id: memoria-markdown
+  statement: |
+    Markdown metadata is optional. Parse frontmatter only when the first
+    line is exactly '---'; require a closing delimiter line. Accept LF and
+    CRLF delimiters. An empty frontmatter block means empty metadata.
+    A nonempty block must contain exactly one YAML mapping with unique
+    string keys. Reject malformed YAML, duplicate keys, custom tags,
+    unsupported aliases, and multiple YAML documents. If description is
+    present, its value must be a YAML string; null, booleans, numbers,
+    sequences, and mappings are invalid. Preserve body bytes and hash the
+    complete original document bytes, including frontmatter and delimiters.
+    Parser limits are explicit Policy inputs and produce typed rejection.
+  kind: safety
+  authority: parser
+  enforced_by: parse-memory-markdown
+- id: memoria-complete-rendering
+  statement: Context uses the supplied current working files, never Git history. Include every eligible regular Markdown file below system/. Sort entries by exact UTF-8 relative path bytes. Serialize compact JSON with ordered entries containing path, metadata and body. Metadata keys are sorted. Count every output UTF-8 byte, including escaping and wrappers. The default budget is 32768 bytes. Return complete context if its size is within budget; otherwise return ContextTooLarge with required and allowed sizes and no partial context. Reject malformed eligible files, duplicate paths and unsafe entry kinds. Tree is a deterministic projection of directories and files, including empty directories and optional descriptions. Neither projection persists an index.
+  kind: safety
+  authority: constructor
+  enforced_by: render-memory
+- id: memoria-safe-batch-recovery
+  statement: |
+    A mutation batch is nonempty and fully validated before producing a
+    mutation plan. Mutation ADTs are Create, Replace, and Delete.
+    Every touched path occurs once across the batch.
+    ExpectedContent is Missing or Sha256; hashes cover exact supplied bytes.
+    Create requires Missing; Replace and Delete require a matching Sha256;
+
+    Reject stale hashes, duplicate targets, invalid documents, invalid paths,
+    and protected mutations without changing state or emitting a plan.
+
+    BatchPending retains batch identity, request digest, operation order,
+    expected originals, desired contents, expected recovery inventory, and
+    the stage ADT Prepare, Apply, MarkCompletion, Rollback, or Cleanup.
+    A BatchPlan contains typed boundary instructions and all preconditions;
+    it is data, not an executed effect. Instructions describe durable
+    recovery preparation, guarded mutations, durable completion marking,
+    guarded restoration, or guarded removal of owned recovery artifacts.
+    Domain code never executes an instruction.
+
+    The boundary must serialize execution and recheck content preconditions
+    at mutation time. It must confine resolved paths to its root and reject
+    symlink traversal. Snapshot validation alone cannot prevent concurrent
+    stale writes. Recovery records must become durable before applying
+    mutations; completion can become durable only after all desired contents
+    are confirmed durable. These are boundary obligations, not domain IO.
+
+    RecoveryObservation supplies batch identity, plan identity, logical
+    observation sequence, durable marker status, exact recovery inventory,
+    and observed content hashes or absence. Marker status is
+    DurableComplete, Absent, or Unknown. Unknown produces an observation-only
+    plan and no rollback or cleanup decision. A valid Absent observation
+    selects rollback; DurableComplete selects cleanup. Resume decisions
+    depend on durable evidence, not the remembered process stage.
+
+    Reject foreign, extra, conflicting, or structurally invalid recovery
+    contents before destructive instructions. Rollback restores only states
+    proven to be this batch's originals or this batch's applied results.
+    Cleanup removes only this batch's declared recovery artifacts and
+    requires durable completion evidence. Missing artifacts are acceptable
+    only when an authorized prior rollback or cleanup step explains them.
+    A restored original or an already removed owned artifact is idempotent.
+
+    Exact duplicate observations replay their prior decision without state
+    advancement. Stale, contradictory, out-of-order, or foreign observations
+    receive typed rejection. Execution uncertainty requests a fresh
+    observation; it never implies success. Completion replies distinguish
+    Applied from RolledBack and require observed cleanup completion.
+    All invalid state/input combinations preserve state and return
+    IllegalTransition. Rejections have no mutation plan and no events.
+  kind: safety
+  authority: transition
+  enforced_by: transition-model
+- id: memoria-pure-reuse
+  statement: |
+    Every public operation is a total pure function over explicit values.
+    Equal state and input produce equal state, reply, rejection, and record.
+    No filesystem, Git, clock, environment, network, random-source, executor,
+    or native driver access is reachable from the public facade.
+    Arithmetic is checked or bounded. Invalid values return typed errors.
+    One src/lib.rs facade exposes the reusable domain package.
+    Native package metadata and dependencies must match the implementation binding.
+  kind: safety
+  authority: transition
+  enforced_by: transition-model
+effects: []
+state: {}
+operations:
+  reconciliation: []
+workflow: {}
+compatibility:
+  policy: backward-compatible-within-major
+verification:
+  laws:
+  - verification/laws/transition_trace.md
+  - verification/laws/path_policy.md
+  - verification/laws/markdown.md
+  - verification/laws/complete_rendering.md
+  - verification/laws/safe_batch_recovery.md
+  - verification/laws/pure_reuse.md
+  contracts:
+  - verification/contracts/resolve-batch-recovery.md
+  - verification/contracts/resolve-batch-recovery-capability.md
+  scenarios:
+  - verification/scenarios/accepted_rejected.md
+  - verification/scenarios/reusable_package.md
+  - verification/scenarios/recovery_fault_matrix.md
+  boundaries: []
+  properties:
+  - verification/properties/transition_properties.md
+  - verification/properties/path_policy.md
+  - verification/properties/markdown.md
+  - verification/properties/rendering.md
+  - verification/properties/pure_reuse.md
+  - verification/properties/recovery.md
+  reconciliation:
+  - verification/reconciliation/pure_recovery.md
+x-rms:
+  reusable: true
+  last_semantic_intent: Record the passing finite state matrix as an exact selected nightly and CI proof.
+  semantic_revision:
+    digest: sha256:bac0663278e1b7d6e8f28ddd218e064235ef8a27c6f341d05498640309bf536f
+    change_record: verification/changes/record-the-passing-finite-state-matrix-as-an-exact-selected-nightly-and-ci-proof-bb1b3999f523.yaml
+    change_record_digest: sha256:bb1b3999f5230d9dba84d4ef85fecd3d1152d46b7c70f1365d9560139cb73a44
+    applied_by: rms spec apply
+properties:
+- id: memoria-path-policy-property
+  proves: memoria-path-policy
+  kind: semantic
+  input_space:
+    strategy: generated
+    generator: memory-path-policy-cases
+  operation:
+    kind: semantic-function
+    name: construct-memory-values
+  oracle:
+  - Generate Unicode paths, invalid components, absolute and drive paths, all mutation kinds, and host Policies.
+  - Independent component validation agrees with MemoryPath acceptance; accepted bytes are unchanged.
+  - Default protections reject every mutation touching either protected path, including creation, replacement and deletion.
+  - Document metadata cannot alter host Policy; explicit host overrides have exactly their declared scope.
+  evidence:
+    path: verification/properties/path_policy.md
+  counterexamples:
+    path: verification/counterexamples/path_policy
+  realizations:
+  - profile: smoke
+    strategy: generated-property
+    command: properties
+    generator: tests/path_policy_properties.rs#generate_cases
+    runner: tests/path_policy_properties.rs#path_policy_property
+- id: memoria-markdown-property
+  proves: memoria-markdown
+  kind: semantic
+  input_space:
+    strategy: generated
+    generator: markdown-frontmatter-cases
+  operation:
+    kind: semantic-function
+    name: parse-memory-markdown
+  oracle:
+  - Generate absent, empty, valid, truncated, duplicate-key, tagged, aliased, deeply nested, and multiple-document frontmatter.
+  - A present description is accepted exactly when its YAML type is string and all other document constraints hold.
+  - Absent metadata is accepted; malformed delimited metadata never silently becomes plain Markdown.
+  - LF and CRLF delimiters preserve original content bytes; reference SHA-256 vectors agree with complete-document hashes.
+  - Limit exhaustion and invalid UTF-8 produce typed rejection without panic.
+  evidence:
+    path: verification/properties/markdown.md
+  counterexamples:
+    path: verification/counterexamples/markdown
+  realizations:
+  - profile: smoke
+    strategy: generated-property
+    command: properties
+    generator: tests/markdown_properties.rs#generate_cases
+    runner: tests/markdown_properties.rs#markdown_property
+- id: memoria-rendering-property
+  proves: memoria-complete-rendering
+  kind: semantic
+  input_space:
+    strategy: generated
+    generator: working-snapshot-cases
+  operation:
+    kind: semantic-function
+    name: render-memory
+  oracle:
+  - Permutations of a valid snapshot produce identical context bytes and tree entries.
+  - An independent UTF-8 byte ordering oracle agrees with emitted order, including non-ASCII paths.
+  - Decoding context yields exactly all eligible system Markdown with path, parsed metadata and exact body and no history substitution.
+  - Independently assembled compact JSON bytes agree exactly, including escaping and fixed key order.
+  - Budgets one byte below, equal to, and one byte above the complete encoded length have the specified outcomes.
+  - Invalid eligible entries and duplicate paths reject the complete result; no truncated or partial output is returned.
+  - Tree output contains each permitted file and derived directory once and retains all four conventional roots.
+  evidence:
+    path: verification/properties/rendering.md
+  counterexamples:
+    path: verification/counterexamples/rendering
+  realizations:
+  - profile: smoke
+    strategy: generated-property
+    command: properties
+    generator: tests/rendering_properties.rs#generate_cases
+    runner: tests/rendering_properties.rs#rendering_property
+- id: memoria-total-decision-property
+  proves: memoria-pure-reuse
+  kind: semantic
+  input_space:
+    strategy: generated
+    generator: public-memory-requests
+  operation:
+    kind: semantic-function
+    name: transition-model
+  oracle:
+  - Generate valid and invalid payloads for every public request and machine state.
+  - Equal explicit inputs produce identical outputs and logical transition records.
+  - Every result has exactly one reply or rejection; a rejection never occupies the reply channel.
+  - Rejections preserve state and contain no plan, effects, or events.
+  - Public-facade consumer tests exercise all operations through the declared public facade without private-module imports.
+  - Audit the public call graph and dependency features for filesystem, Git, clock, environment, network, and native execution access.
+  - Package metadata, allowlists, and justfile host commands match the declared requirements; binding drift fails verification.
+  - Each saved counterexample replays through the same operation and independent oracle.
+  evidence:
+    path: verification/properties/pure_reuse.md
+  counterexamples:
+    path: verification/counterexamples/pure_reuse
+  realizations:
+  - profile: smoke
+    strategy: generated-property
+    command: properties
+    generator: tests/public_capability_properties.rs#generate_requests
+    runner: tests/public_capability_properties.rs#public_capability_property
+- id: memoria-recovery-property
+  proves: memoria-safe-batch-recovery
+  kind: semantic
+  input_space:
+    strategy: generated
+    generator: batch-recovery-histories
+  operation:
+    kind: semantic-function
+    name: transition-model
+  oracle:
+  - Generate batches, stale snapshots, duplicate touched paths, all recovery stages, and interruption points around each durable operation.
+  - An independent in-memory boundary model checks plan preconditions again before each modeled mutation.
+  - Any invalid batch rejects atomically with unchanged state and no plan; no valid prefix is emitted.
+  - Before durable completion recovery chooses rollback; after durable completion it chooses cleanup; unknown durability requests observation only.
+  - Inject foreign artifacts, changed hashes, missing backups, partial application, lost acknowledgments, and corrected observations.
+  - Unexpected recovery contents never authorize overwriting or deleting unrelated bytes.
+  - Replaying the same valid observation is idempotent; stale and contradictory observations reject without advancement.
+  - A modeled execution that obeys boundary obligations restores all originals or retains all desired contents before settlement.
+  - Enumerate every machine state and command category; each combination selects exactly one transition case.
+  - Validate external assumptions as explicit model inputs; these tests do not claim proof of an unavailable native boundary.
+  evidence:
+    path: verification/properties/recovery.md
+  counterexamples:
+    path: verification/counterexamples/recovery
+  realizations:
+  - profile: smoke
+    strategy: generated-property
+    command: properties
+    generator: tests/recovery_properties.rs#generate_histories
+    runner: tests/recovery_properties.rs#recovery_property
+  - profile: nightly
+    strategy: deterministic-exhaustive
+    command: exhaustive
+    generator: tests/exhaustive_transitions.rs#generate_cases
+    runner: tests/exhaustive_transitions.rs#exhaustive_transitions
+    exhaustive: true
+  - profile: ci
+    strategy: integration-test
+    command: exhaustive
+    runner: modules/batch-recovery-decisions/tests/exhaustive_transitions.rs#exhaustive_transitions
+    owner_module: batch-recovery-decisions
+    package: batch-recovery-decisions
+    working_directory: modules/batch-recovery-decisions
+    test_selection: exhaustive_transitions

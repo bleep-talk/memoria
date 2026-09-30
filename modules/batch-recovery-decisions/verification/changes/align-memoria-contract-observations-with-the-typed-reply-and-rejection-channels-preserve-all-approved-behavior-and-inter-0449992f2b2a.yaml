@@ -1,0 +1,715 @@
+spec: rms/semantic-change/v0.1
+module: modules/batch-recovery-decisions/implementation.yaml
+supersedes:
+- verification/changes/replace-every-generic-scaffold-command-and-result-with-the-approved-memoria-pure-validation-rendering-batch-planning-and-4805e5ca5339.yaml
+intent:
+  summary: Align Memoria contract observations with the typed reply and rejection channels. Preserve all approved behavior and internal Cargo identities.
+declaration: null
+laws:
+  add: []
+  set:
+  - id: memoria-pure-reuse
+    statement: |
+      Every public operation is a total pure function over explicit values.
+      Equal state and input produce equal state, reply, rejection, and record.
+      No filesystem, Git, clock, environment, network, random-source, executor,
+      or native driver access is reachable from the public facade.
+      Arithmetic is checked or bounded. Invalid values return typed errors.
+      One src/lib.rs facade exposes the reusable domain package.
+      Native package metadata and dependencies must match the implementation binding.
+    kind: safety
+    authority: transition
+    enforced_by: transition-model
+  remove: []
+contracts:
+  add: []
+  set:
+  - name: resolve-batch-recovery-capability
+    kind: capability
+    direction: provided
+    version: '1'
+    command: null
+    meaning: |
+      Reusable Memoria pure capability for path and Policy validation,
+      Markdown validation, working-file context and tree projection,
+      guarded batch planning, and recovery decisions from explicit observations.
+    accepts: []
+    ensures: []
+    rejects: []
+    semantics:
+      behavior:
+        observability: full
+        observations:
+        - id: outcome-MemoryDecision
+          source:
+            kind: output
+            output_kind: reply
+            name: MemoryDecision
+          value: occurrence
+        - id: outcome-BatchPlan
+          source:
+            kind: output
+            output_kind: reply
+            name: BatchPlan
+          value: occurrence
+        - id: outcome-BatchSettled
+          source:
+            kind: output
+            output_kind: reply
+            name: BatchSettled
+          value: occurrence
+        - id: outcome-MemoryRejected
+          source:
+            kind: output
+            output_kind: rejection
+            name: MemoryRejected
+          value: occurrence
+        - id: outcome-IllegalTransition
+          source:
+            kind: output
+            output_kind: rejection
+            name: IllegalTransition
+          value: occurrence
+        assumptions:
+        - id: boundary-snapshot-and-durability
+          statement: |
+            Execution claims require the caller to supply faithful working
+            snapshots and durability observations and to execute plans with
+            root confinement, serialization, hash rechecks, and durability
+            ordering. Git data describes committed history only.
+          evaluation:
+            kind: external
+            property: memoria-recovery-property
+        requires:
+        - id: valid-request
+          statement: |
+            Validate raw path and Markdown values, host Policy, snapshot
+            uniqueness, mutation preconditions, and recovery observations;
+            invalid values are rejected, not caller obligations.
+          evaluation:
+            kind: external
+            property: memoria-total-decision-property
+        guarantees:
+        - id: explicit-outcome
+          statement: |
+            Return a complete deterministic projection, a typed executable
+            plan, an observed terminal outcome, or a typed rejection.
+          evaluation:
+            kind: external
+            property: memoria-total-decision-property
+        - id: complete-context
+          statement: Context contains all eligible system Markdown or rejects the complete output.
+          evaluation:
+            kind: external
+            property: memoria-rendering-property
+        - id: recoverable-plans
+          statement: Recovery uses durable marker evidence and rejects unexpected contents.
+          evaluation:
+            kind: external
+            property: memoria-recovery-property
+        failures:
+        - id: rejected-request
+          statement: |
+            MemoryRejected carries exactly one typed reason:
+            InvalidPath, InvalidPolicy, ProtectedMutation, MalformedYaml,
+            InvalidDescription, InvalidUtf8, ParserLimitExceeded,
+            DuplicateTarget, DuplicateSnapshotPath, StaleWrite,
+            ContextTooLarge, UnsupportedEntryKind, EmptyBatch,
+            UnexpectedRecoveryContents, InvalidRecoveryRecord,
+            StaleObservation, ConflictingObservation, ForeignBatch,
+            or ArithmeticOverflow. It carries no executable plan.
+          evaluation:
+            kind: external
+            property: memoria-total-decision-property
+        - id: illegal-lifecycle
+          statement: IllegalTransition preserves state and carries no executable plan.
+          evaluation:
+            kind: external
+            property: memoria-recovery-property
+        cases:
+        - id: memory-result
+          statement: A pure validation or rendering request returns its typed result.
+          when:
+            equals:
+              left:
+                observation: outcome-MemoryDecision
+              right:
+                literal: true
+          outcome:
+            kind: accepted
+            expression:
+              equals:
+                left:
+                  observation: outcome-MemoryDecision
+                right:
+                  literal: true
+          ensures: []
+          permits:
+            state_changes: []
+            events: []
+            effects: []
+        - id: batch-plan-result
+          statement: A valid lifecycle request returns a typed plan and retained decision state.
+          when:
+            equals:
+              left:
+                observation: outcome-BatchPlan
+              right:
+                literal: true
+          outcome:
+            kind: accepted
+            expression:
+              equals:
+                left:
+                  observation: outcome-BatchPlan
+                right:
+                  literal: true
+          ensures: []
+          permits:
+            state_changes:
+            - /state
+            events: []
+            effects: []
+        - id: settled-result
+          statement: Confirmed final recovery observations return Applied or RolledBack.
+          when:
+            equals:
+              left:
+                observation: outcome-BatchSettled
+              right:
+                literal: true
+          outcome:
+            kind: accepted
+            expression:
+              equals:
+                left:
+                  observation: outcome-BatchSettled
+                right:
+                  literal: true
+          ensures: []
+          permits:
+            state_changes:
+            - /state
+            events: []
+            effects: []
+        - id: invalid-memory-request
+          statement: Invalid data returns a typed rejection with an empty change frame.
+          when:
+            equals:
+              left:
+                observation: outcome-MemoryRejected
+              right:
+                literal: true
+          outcome:
+            kind: rejected
+            category: rejected-request
+            expression:
+              equals:
+                left:
+                  observation: outcome-MemoryRejected
+                right:
+                  literal: true
+          ensures: []
+          permits:
+            state_changes: []
+            events: []
+            effects: []
+        - id: illegal-state-request
+          statement: An illegal state/input pair returns a lifecycle rejection.
+          when:
+            equals:
+              left:
+                observation: outcome-IllegalTransition
+              right:
+                literal: true
+          outcome:
+            kind: rejected
+            category: illegal-lifecycle
+            expression:
+              equals:
+                left:
+                  observation: outcome-IllegalTransition
+                right:
+                  literal: true
+          ensures: []
+          permits:
+            state_changes: []
+            events: []
+            effects: []
+        invariants:
+        - id: pure-public-outcome
+          statement: Public invocation performs no IO and is deterministic.
+          evaluation:
+            kind: external
+            property: memoria-total-decision-property
+        case_policy:
+          coverage: exhaustive
+          overlap: forbidden
+    protocol: null
+  - name: resolve-batch-recovery
+    kind: command
+    direction: provided
+    version: '1'
+    command: null
+    meaning: |
+      Evaluate DecideMemory, BeginBatch, ObserveRecovery, or ResumeRecovery.
+      DecideMemory contains ValidatePath, ValidatePolicy, ValidateMarkdown,
+      RenderContext, or RenderTree. BeginBatch contains host Policy, a current
+      working snapshot, caller-supplied batch identity, and guarded mutations.
+      ObserveRecovery advances an active plan from supplied observations.
+      ResumeRecovery reconstructs a batch decision from validated recovery
+      records and current observations. No command performs native effects.
+    accepts: []
+    ensures: []
+    rejects: []
+    semantics:
+      behavior:
+        observability: full
+        observations:
+        - id: outcome-MemoryDecision
+          source:
+            kind: output
+            output_kind: reply
+            name: MemoryDecision
+          value: occurrence
+        - id: outcome-BatchPlan
+          source:
+            kind: output
+            output_kind: reply
+            name: BatchPlan
+          value: occurrence
+        - id: outcome-BatchSettled
+          source:
+            kind: output
+            output_kind: reply
+            name: BatchSettled
+          value: occurrence
+        - id: outcome-MemoryRejected
+          source:
+            kind: output
+            output_kind: rejection
+            name: MemoryRejected
+          value: occurrence
+        - id: outcome-IllegalTransition
+          source:
+            kind: output
+            output_kind: rejection
+            name: IllegalTransition
+          value: occurrence
+        assumptions:
+        - id: boundary-snapshot-and-durability
+          statement: |
+            Execution claims require the caller to supply faithful working
+            snapshots and durability observations and to execute plans with
+            root confinement, serialization, hash rechecks, and durability
+            ordering. Git data describes committed history only.
+          evaluation:
+            kind: external
+            property: memoria-recovery-property
+        requires:
+        - id: valid-request
+          statement: |
+            Validate raw path and Markdown values, host Policy, snapshot
+            uniqueness, mutation preconditions, and recovery observations;
+            invalid values are rejected, not caller obligations.
+          evaluation:
+            kind: external
+            property: memoria-total-decision-property
+        guarantees:
+        - id: explicit-outcome
+          statement: |
+            Return a complete deterministic projection, a typed executable
+            plan, an observed terminal outcome, or a typed rejection.
+          evaluation:
+            kind: external
+            property: memoria-total-decision-property
+        - id: complete-context
+          statement: Context contains all eligible system Markdown or rejects the complete output.
+          evaluation:
+            kind: external
+            property: memoria-rendering-property
+        - id: recoverable-plans
+          statement: Recovery uses durable marker evidence and rejects unexpected contents.
+          evaluation:
+            kind: external
+            property: memoria-recovery-property
+        failures:
+        - id: rejected-request
+          statement: |
+            MemoryRejected carries exactly one typed reason:
+            InvalidPath, InvalidPolicy, ProtectedMutation, MalformedYaml,
+            InvalidDescription, InvalidUtf8, ParserLimitExceeded,
+            DuplicateTarget, DuplicateSnapshotPath, StaleWrite,
+            ContextTooLarge, UnsupportedEntryKind, EmptyBatch,
+            UnexpectedRecoveryContents, InvalidRecoveryRecord,
+            StaleObservation, ConflictingObservation, ForeignBatch,
+            or ArithmeticOverflow. It carries no executable plan.
+          evaluation:
+            kind: external
+            property: memoria-total-decision-property
+        - id: illegal-lifecycle
+          statement: IllegalTransition preserves state and carries no executable plan.
+          evaluation:
+            kind: external
+            property: memoria-recovery-property
+        cases:
+        - id: memory-result
+          statement: A pure validation or rendering request returns its typed result.
+          when:
+            equals:
+              left:
+                observation: outcome-MemoryDecision
+              right:
+                literal: true
+          outcome:
+            kind: accepted
+            expression:
+              equals:
+                left:
+                  observation: outcome-MemoryDecision
+                right:
+                  literal: true
+          ensures: []
+          permits:
+            state_changes: []
+            events: []
+            effects: []
+        - id: batch-plan-result
+          statement: A valid lifecycle request returns a typed plan and retained decision state.
+          when:
+            equals:
+              left:
+                observation: outcome-BatchPlan
+              right:
+                literal: true
+          outcome:
+            kind: accepted
+            expression:
+              equals:
+                left:
+                  observation: outcome-BatchPlan
+                right:
+                  literal: true
+          ensures: []
+          permits:
+            state_changes:
+            - /state
+            events: []
+            effects: []
+        - id: settled-result
+          statement: Confirmed final recovery observations return Applied or RolledBack.
+          when:
+            equals:
+              left:
+                observation: outcome-BatchSettled
+              right:
+                literal: true
+          outcome:
+            kind: accepted
+            expression:
+              equals:
+                left:
+                  observation: outcome-BatchSettled
+                right:
+                  literal: true
+          ensures: []
+          permits:
+            state_changes:
+            - /state
+            events: []
+            effects: []
+        - id: invalid-memory-request
+          statement: Invalid data returns a typed rejection with an empty change frame.
+          when:
+            equals:
+              left:
+                observation: outcome-MemoryRejected
+              right:
+                literal: true
+          outcome:
+            kind: rejected
+            category: rejected-request
+            expression:
+              equals:
+                left:
+                  observation: outcome-MemoryRejected
+                right:
+                  literal: true
+          ensures: []
+          permits:
+            state_changes: []
+            events: []
+            effects: []
+        - id: illegal-state-request
+          statement: An illegal state/input pair returns a lifecycle rejection.
+          when:
+            equals:
+              left:
+                observation: outcome-IllegalTransition
+              right:
+                literal: true
+          outcome:
+            kind: rejected
+            category: illegal-lifecycle
+            expression:
+              equals:
+                left:
+                  observation: outcome-IllegalTransition
+                right:
+                  literal: true
+          ensures: []
+          permits:
+            state_changes: []
+            events: []
+            effects: []
+        invariants:
+        - id: pure-public-outcome
+          statement: Public invocation performs no IO and is deterministic.
+          evaluation:
+            kind: external
+            property: memoria-total-decision-property
+        case_policy:
+          coverage: exhaustive
+          overlap: forbidden
+    protocol: null
+  remove: []
+properties:
+  add: []
+  set:
+  - id: memoria-path-policy-property
+    proves: memoria-path-policy
+    kind: semantic
+    subject: null
+    input_space:
+      strategy: generated
+      generator: memory-path-policy-cases
+    preconditions: []
+    operation:
+      kind: semantic-function
+      name: construct-memory-values
+    oracle:
+    - Generate Unicode paths, invalid components, absolute and drive paths, all mutation kinds, and host Policies.
+    - Independent component validation agrees with MemoryPath acceptance; accepted bytes are unchanged.
+    - Default protections reject every mutation touching either protected path, including creation, replacement and deletion.
+    - Document metadata cannot alter host Policy; explicit host overrides have exactly their declared scope.
+    evidence:
+      kind: property
+      path: verification/properties/path_policy.md
+    counterexamples:
+      path: verification/counterexamples/path_policy
+    realizations:
+    - profile: smoke
+      strategy: generated-property
+      command: properties
+      generator: tests/path_policy_properties.rs#generate_cases
+      runner: tests/path_policy_properties.rs#path_policy_property
+      exhaustive: false
+      owner_module: null
+      package: null
+      working_directory: null
+      test_selection: null
+    explorations: []
+    observations: []
+    observability: null
+    assumptions: []
+    temporal: null
+  - id: memoria-markdown-property
+    proves: memoria-markdown
+    kind: semantic
+    subject: null
+    input_space:
+      strategy: generated
+      generator: markdown-frontmatter-cases
+    preconditions: []
+    operation:
+      kind: semantic-function
+      name: parse-memory-markdown
+    oracle:
+    - Generate absent, empty, valid, truncated, duplicate-key, tagged, aliased, deeply nested, and multiple-document frontmatter.
+    - A present description is accepted exactly when its YAML type is string and all other document constraints hold.
+    - Absent metadata is accepted; malformed delimited metadata never silently becomes plain Markdown.
+    - LF and CRLF delimiters preserve original content bytes; reference SHA-256 vectors agree with complete-document hashes.
+    - Limit exhaustion and invalid UTF-8 produce typed rejection without panic.
+    evidence:
+      kind: property
+      path: verification/properties/markdown.md
+    counterexamples:
+      path: verification/counterexamples/markdown
+    realizations:
+    - profile: smoke
+      strategy: generated-property
+      command: properties
+      generator: tests/markdown_properties.rs#generate_cases
+      runner: tests/markdown_properties.rs#markdown_property
+      exhaustive: false
+      owner_module: null
+      package: null
+      working_directory: null
+      test_selection: null
+    explorations: []
+    observations: []
+    observability: null
+    assumptions: []
+    temporal: null
+  - id: memoria-rendering-property
+    proves: memoria-complete-rendering
+    kind: semantic
+    subject: null
+    input_space:
+      strategy: generated
+      generator: working-snapshot-cases
+    preconditions: []
+    operation:
+      kind: semantic-function
+      name: render-memory
+    oracle:
+    - Permutations of a valid snapshot produce identical context bytes and tree entries.
+    - An independent UTF-8 byte ordering oracle agrees with emitted order, including non-ASCII paths.
+    - Decoding context yields exactly all eligible system Markdown with path, parsed metadata and exact body and no history substitution.
+    - Independently assembled compact JSON bytes agree exactly, including escaping and fixed key order.
+    - Budgets one byte below, equal to, and one byte above the complete encoded length have the specified outcomes.
+    - Invalid eligible entries and duplicate paths reject the complete result; no truncated or partial output is returned.
+    - Tree output contains each permitted file and derived directory once and retains all four conventional roots.
+    evidence:
+      kind: property
+      path: verification/properties/rendering.md
+    counterexamples:
+      path: verification/counterexamples/rendering
+    realizations:
+    - profile: smoke
+      strategy: generated-property
+      command: properties
+      generator: tests/rendering_properties.rs#generate_cases
+      runner: tests/rendering_properties.rs#rendering_property
+      exhaustive: false
+      owner_module: null
+      package: null
+      working_directory: null
+      test_selection: null
+    explorations: []
+    observations: []
+    observability: null
+    assumptions: []
+    temporal: null
+  - id: memoria-recovery-property
+    proves: memoria-safe-batch-recovery
+    kind: semantic
+    subject: null
+    input_space:
+      strategy: generated
+      generator: batch-recovery-histories
+    preconditions: []
+    operation:
+      kind: semantic-function
+      name: transition-model
+    oracle:
+    - Generate batches, stale snapshots, duplicate touched paths, all recovery stages, and interruption points around each durable operation.
+    - An independent in-memory boundary model checks plan preconditions again before each modeled mutation.
+    - Any invalid batch rejects atomically with unchanged state and no plan; no valid prefix is emitted.
+    - Before durable completion recovery chooses rollback; after durable completion it chooses cleanup; unknown durability requests observation only.
+    - Inject foreign artifacts, changed hashes, missing backups, partial application, lost acknowledgments, and corrected observations.
+    - Unexpected recovery contents never authorize overwriting or deleting unrelated bytes.
+    - Replaying the same valid observation is idempotent; stale and contradictory observations reject without advancement.
+    - A modeled execution that obeys boundary obligations restores all originals or retains all desired contents before settlement.
+    - Enumerate every machine state and command category; each combination selects exactly one transition case.
+    - Validate external assumptions as explicit model inputs; these tests do not claim proof of an unavailable native boundary.
+    evidence:
+      kind: property
+      path: verification/properties/recovery.md
+    counterexamples:
+      path: verification/counterexamples/recovery
+    realizations:
+    - profile: smoke
+      strategy: generated-property
+      command: properties
+      generator: tests/recovery_properties.rs#generate_histories
+      runner: tests/recovery_properties.rs#recovery_property
+      exhaustive: false
+      owner_module: null
+      package: null
+      working_directory: null
+      test_selection: null
+    explorations: []
+    observations: []
+    observability: null
+    assumptions: []
+    temporal: null
+  - id: memoria-total-decision-property
+    proves: memoria-pure-reuse
+    kind: semantic
+    subject: null
+    input_space:
+      strategy: generated
+      generator: public-memory-requests
+    preconditions: []
+    operation:
+      kind: semantic-function
+      name: transition-model
+    oracle:
+    - Generate valid and invalid payloads for every public request and machine state.
+    - Equal explicit inputs produce identical outputs and logical transition records.
+    - Every result has exactly one reply or rejection; a rejection never occupies the reply channel.
+    - Rejections preserve state and contain no plan, effects, or events.
+    - Public-facade consumer tests exercise all operations through the declared public facade without private-module imports.
+    - Audit the public call graph and dependency features for filesystem, Git, clock, environment, network, and native execution access.
+    - Package metadata, allowlists, and justfile host commands match the declared requirements; binding drift fails verification.
+    - Each saved counterexample replays through the same operation and independent oracle.
+    evidence:
+      kind: property
+      path: verification/properties/pure_reuse.md
+    counterexamples:
+      path: verification/counterexamples/pure_reuse
+    realizations:
+    - profile: smoke
+      strategy: generated-property
+      command: properties
+      generator: tests/public_capability_properties.rs#generate_requests
+      runner: tests/public_capability_properties.rs#public_capability_property
+      exhaustive: false
+      owner_module: null
+      package: null
+      working_directory: null
+      test_selection: null
+    explorations: []
+    observations: []
+    observability: null
+    assumptions: []
+    temporal: null
+  remove: []
+hunt_exceptions: null
+proof_delegations: null
+trace_producers: null
+probe: null
+semantic_functions: null
+implementation_commands: null
+machine: null
+roles: null
+representation: null
+allowed_missing_constructors: null
+evidence:
+  add:
+  - kind: law
+    proves: memoria-pure-reuse
+    path: verification/laws/pure_reuse.md
+  - kind: contract
+    proves: resolve-batch-recovery
+    path: verification/contracts/resolve-batch-recovery.md
+  - kind: contract
+    proves: resolve-batch-recovery-capability
+    path: verification/contracts/resolve-batch-recovery-capability.md
+  - kind: scenario
+    proves: memoria-pure-reuse
+    path: verification/scenarios/reusable_package.md
+  - kind: law
+    proves: memoria-pure-reuse
+    path: verification/laws/transition_trace.md
+  remove: []
+surfaces: null
+binding_dependencies: null
+artifacts: null
+transformations: null
+authorities: null
+protocol_bindings: null
+authority_bindings: null
+public_behavior_bindings: null
+dependency_behavior_bindings: null

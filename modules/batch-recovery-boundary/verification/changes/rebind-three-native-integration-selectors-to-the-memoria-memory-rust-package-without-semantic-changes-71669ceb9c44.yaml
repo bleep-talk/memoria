@@ -1,0 +1,175 @@
+spec: rms/semantic-change/v0.1
+module: modules/batch-recovery-boundary/implementation.yaml
+supersedes:
+- verification/changes/replace-the-memoria-native-boundary-scaffold-with-exact-public-operations-confined-filesystem-and-git-effects-domain-del-d691372c9471.yaml
+intent:
+  summary: Rebind three native integration selectors to the memoria-memory Rust package without semantic changes.
+declaration: null
+laws: null
+contracts: null
+properties:
+  add: []
+  set:
+  - id: crash-and-failure-schedules
+    proves: bounded-durable-recovery
+    kind: semantic
+    subject: null
+    input_space:
+      strategy: generated
+      generator: journal-crash-schedule-generator
+    preconditions:
+    - The provider recovery contract has product semantics.
+    operation:
+      kind: semantic-function
+      name: transition-model
+    oracle:
+    - Generate batches, absent/present expected hashes, duplicate paths, ancestor collisions, deletion cases, empty batches, and all host-limit boundaries.
+    - Validate the whole batch against the locked snapshot before persisting its journal.
+    - Journal schema version 1 records repository identity, transaction identity, bounded entries, before/after hashes, recovery data, and completion state.
+    - Bound decoding, allocation, entry count, backup bytes, and total encoded bytes with checked arithmetic.
+    - Inject short writes, interruption, disk-full errors, failed flushes, rename failures, cleanup failures, and crashes before and after each durable step.
+    - A partial journal that has not enabled apply cannot authorize rollback of arbitrary paths.
+    - An incomplete journal restores the pre-apply state when observed files match permitted before/after states.
+    - Recovery rechecks each destination before mutation and preserves unexpected content with RecoveryConflict.
+    - Repeated crashes during rollback or cleanup remain recoverable and do not erase conflict evidence.
+    - A complete durable journal is cleaned without rolling back its committed filesystem state.
+    - No apply effect precedes JournalDurable and no successful mutation reply precedes CompletionDurable.
+    - A failed apply is never automatically replayed as a new user request.
+    - Errors retain the original operation failure and report pending recovery or cleanup when applicable.
+    evidence:
+      kind: property
+      path: verification/properties/crash_recovery
+    counterexamples:
+      path: verification/counterexamples/crash_recovery
+    realizations:
+    - profile: smoke
+      strategy: generated-property
+      command: fuzz
+      generator: tests/properties.rs#generate_crash_schedules
+      runner: tests/properties.rs#check_crash_recovery
+      exhaustive: false
+      owner_module: null
+      package: null
+      working_directory: null
+      test_selection: null
+    - profile: ci
+      strategy: integration-test
+      command: integration
+      generator: null
+      runner: modules/batch-recovery-boundary/tests/concurrency.rs#crash_restart_recovers
+      exhaustive: false
+      owner_module: batch-recovery-boundary
+      package: memoria-memory
+      working_directory: modules/batch-recovery-boundary
+      test_selection: crash_restart_recovers
+    explorations: []
+    observations: []
+    observability: null
+    assumptions: []
+    temporal: null
+  - id: real-process-serialization
+    proves: confined-serialized-storage
+    kind: semantic
+    subject: null
+    input_space:
+      strategy: generated
+      generator: two-process-operation-schedules
+    preconditions:
+    - Two independent OS processes use the same repository and host policy.
+    operation:
+      kind: semantic-function
+      name: memory-repo-facade
+    oracle:
+    - Spawn two real processes; thread-only tests do not satisfy this property.
+    - Use barriers to overlap lock acquisition, expected-hash validation, apply, recovery, and commit.
+    - Two writes with the same expected hash cannot both report successful conflicting updates.
+    - A read cannot observe a cooperating writer's partially applied batch.
+    - Killing a lock owner releases the OS lock and the next process recovers its incomplete journal before continuing.
+    - Distinct path spellings for the same supported repository resolve to the same lock identity.
+    - An external noncooperating edit is preserved and reported as RecoveryConflict when recovery encounters it.
+    - Record the selected test count and child exit results.
+    evidence:
+      kind: property
+      path: verification/properties/process_concurrency
+    counterexamples:
+      path: verification/counterexamples/process_concurrency
+    realizations:
+    - profile: ci
+      strategy: integration-test
+      command: integration
+      generator: null
+      runner: modules/batch-recovery-boundary/tests/concurrency.rs#two_process_repository_serialization
+      exhaustive: false
+      owner_module: batch-recovery-boundary
+      package: memoria-memory
+      working_directory: modules/batch-recovery-boundary
+      test_selection: two_process_repository_serialization
+    explorations: []
+    observations: []
+    observability: null
+    assumptions: []
+    temporal: null
+  - id: external-consumer-and-cli
+    proves: reusable-native-facade
+    kind: semantic
+    subject: null
+    input_space:
+      strategy: generated
+      generator: package-and-cli-request-cases
+    preconditions: []
+    operation:
+      kind: semantic-function
+      name: memory-repo-facade
+    oracle:
+    - Create an independent temporary Cargo consumer outside the library workspace and import the public memoria-memory package.
+    - Compile and exercise MemoryRepo through src/lib.rs exports without private source imports or CLI dependencies.
+    - Build the separate nested CLI crate and verify that its binary is named memoria.
+    - Run CLI cases for all operations and compare results with direct library calls.
+    - Every CLI response uses schema_version 1 and a stable accepted, invalid-request, or operation-error envelope.
+    - Errors expose stable codes and typed details; error messages are not parsed as the protocol.
+    - JSON stdout contains exactly one response; diagnostic stderr does not contaminate it.
+    - Invalid UTF8 arguments, malformed JSON, broken output pipes, unknown commands, and oversized input receive defined nonpanic handling.
+    - No CLI option overrides host policy or enables checkout, hooks, networking, bare repositories, worktrees, or submodules.
+    - Project just recipes invoke native Rust commands and selector recipes select at least one exact test rather than silently running zero tests.
+    evidence:
+      kind: property
+      path: verification/properties/external_consumer
+    counterexamples:
+      path: verification/counterexamples/external_consumer
+    realizations:
+    - profile: ci
+      strategy: integration-test
+      command: integration
+      generator: null
+      runner: modules/batch-recovery-boundary/tests/package_consumer.rs#external_consumer_and_cli
+      exhaustive: false
+      owner_module: batch-recovery-boundary
+      package: memoria-memory
+      working_directory: modules/batch-recovery-boundary
+      test_selection: external_consumer_and_cli
+    explorations: []
+    observations: []
+    observability: null
+    assumptions: []
+    temporal: null
+  remove: []
+hunt_exceptions: null
+proof_delegations: null
+trace_producers: null
+probe: null
+semantic_functions: null
+implementation_commands: null
+machine: null
+roles: null
+representation: null
+allowed_missing_constructors: null
+evidence: null
+surfaces: null
+binding_dependencies: null
+artifacts: null
+transformations: null
+authorities: null
+protocol_bindings: null
+authority_bindings: null
+public_behavior_bindings: null
+dependency_behavior_bindings: null

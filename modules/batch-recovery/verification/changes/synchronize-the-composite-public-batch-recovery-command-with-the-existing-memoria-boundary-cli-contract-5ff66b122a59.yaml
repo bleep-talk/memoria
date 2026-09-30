@@ -1,0 +1,42 @@
+spec: rms/semantic-change/v0.1
+module: modules/batch-recovery/module.yaml
+supersedes: []
+intent:
+  summary: Synchronize the composite public batch-recovery command with the existing Memoria boundary CLI contract.
+declaration: null
+laws: null
+contracts: null
+composition_exports:
+  set: null
+  add:
+  - group: commands
+    name: batch-recovery
+    from: batch-recovery-boundary
+    contract: contracts/batch-recovery.v1.yaml
+  remove: []
+properties: null
+hunt_exceptions: null
+proof_delegations: null
+trace_producers: null
+probe: null
+semantic_functions: null
+implementation_commands: null
+machine: null
+roles: null
+representation: null
+allowed_missing_constructors: null
+evidence:
+  add:
+  - kind: contract
+    proves: batch-recovery
+    path: verification/contracts/batch-recovery.md
+  remove: []
+surfaces: null
+binding_dependencies: null
+artifacts: null
+transformations: null
+authorities: null
+protocol_bindings: null
+authority_bindings: null
+public_behavior_bindings: null
+dependency_behavior_bindings: null

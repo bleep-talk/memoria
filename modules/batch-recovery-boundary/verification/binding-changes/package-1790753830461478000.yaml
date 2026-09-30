@@ -1,0 +1,8 @@
+from: batch-recovery-boundary
+package: memoria-memory
+previous_revision:
+  applied_by: rms spec apply
+  change_record: verification/changes/replace-the-memoria-native-boundary-scaffold-with-exact-public-operations-confined-filesystem-and-git-effects-domain-del-d691372c9471.yaml
+  change_record_digest: sha256:d691372c94712d35d698724a13580b9fc8c102402bf3cc1da44e1f9ddb450bda
+  digest: sha256:af597c112dd7382fd489b92630d5fe7e73042453515619a4e3d789de75134397
+spec: rms/binding-package-change/v0.1

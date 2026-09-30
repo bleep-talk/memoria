@@ -1,0 +1,295 @@
+spec: rms/semantic-change/v0.1
+module: modules/batch-recovery-boundary/module.yaml
+supersedes:
+- verification/changes/rebind-three-native-integration-selectors-to-the-memoria-memory-rust-package-without-semantic-changes-71669ceb9c44.yaml
+intent:
+  summary: Align native effect authorities with the exact closed source-linked effect analysis.
+declaration: null
+laws: null
+contracts: null
+properties: null
+hunt_exceptions: null
+proof_delegations: null
+trace_producers: null
+probe: null
+semantic_functions:
+  add: []
+  set:
+  - id: memory-repo-facade
+    symbol: src/repo.rs#MemoryRepo::dispatch
+    kind: adapter
+    purity: effectful
+    trust: boundary
+    evidence:
+      properties:
+      - verification/properties/public_operations
+      - verification/properties/external_consumer
+    authorities:
+    - environment
+    - filesystem
+    - git
+    - local-git
+    - process
+    - randomness
+    - repository-io
+  - id: memory-driver
+    symbol: src/driver.rs#drive
+    kind: adapter
+    purity: effectful
+    trust: boundary
+    evidence:
+      properties:
+      - verification/properties/phase_protocol
+    authorities:
+    - environment
+    - filesystem
+    - git
+    - local-git
+    - process
+    - randomness
+    - repository-io
+  - id: cli-adapter
+    symbol: cli/src/main.rs#run
+    kind: adapter
+    purity: effectful
+    trust: boundary
+    evidence:
+      properties:
+      - verification/properties/external_consumer
+    authorities:
+    - cli-stdio
+    - local-git
+    - repository-io
+  - id: acquire-lock-executor
+    symbol: src/effects/acquire_lock.rs#execute
+    kind: effect-executor
+    purity: effectful
+    trust: boundary
+    evidence:
+      properties:
+      - verification/properties/process_concurrency
+    authorities:
+    - filesystem
+    - repository-io
+  - id: inspect-repository-executor
+    symbol: src/effects/inspect_repository.rs#execute
+    kind: effect-executor
+    purity: effectful
+    trust: boundary
+    evidence:
+      properties:
+      - verification/properties/filesystem_safety
+    authorities:
+    - environment
+    - filesystem
+    - git
+    - local-git
+    - process
+    - randomness
+  - id: inspect-journal-executor
+    symbol: src/effects/inspect_journal.rs#execute
+    kind: effect-executor
+    purity: effectful
+    trust: boundary
+    evidence:
+      properties:
+      - verification/properties/crash_recovery
+    authorities:
+    - filesystem
+  - id: rollback-journal-executor
+    symbol: src/effects/rollback_journal.rs#execute
+    kind: effect-executor
+    purity: effectful
+    trust: boundary
+    evidence:
+      properties:
+      - verification/properties/crash_recovery
+    authorities:
+    - environment
+    - filesystem
+    - process
+  - id: cleanup-journal-executor
+    symbol: src/effects/cleanup_journal.rs#execute
+    kind: effect-executor
+    purity: effectful
+    trust: boundary
+    evidence:
+      properties:
+      - verification/properties/crash_recovery
+    authorities:
+    - environment
+    - filesystem
+    - process
+  - id: read-snapshot-executor
+    symbol: src/effects/read_snapshot.rs#execute
+    kind: effect-executor
+    purity: effectful
+    trust: boundary
+    evidence:
+      properties:
+      - verification/properties/filesystem_safety
+    authorities:
+    - filesystem
+    - randomness
+  - id: persist-journal-executor
+    symbol: src/effects/persist_journal.rs#execute
+    kind: effect-executor
+    purity: effectful
+    trust: boundary
+    evidence:
+      properties:
+      - verification/properties/crash_recovery
+    authorities:
+    - environment
+    - filesystem
+    - process
+  - id: apply-filesystem-executor
+    symbol: src/effects/apply_filesystem.rs#execute
+    kind: effect-executor
+    purity: effectful
+    trust: boundary
+    evidence:
+      properties:
+      - verification/properties/crash_recovery
+    authorities:
+    - environment
+    - filesystem
+    - process
+  - id: persist-completion-executor
+    symbol: src/effects/persist_completion.rs#execute
+    kind: effect-executor
+    purity: effectful
+    trust: boundary
+    evidence:
+      properties:
+      - verification/properties/crash_recovery
+    authorities:
+    - environment
+    - filesystem
+    - process
+  - id: inspect-git-executor
+    symbol: src/effects/inspect_git.rs#execute
+    kind: effect-executor
+    purity: effectful
+    trust: boundary
+    evidence:
+      properties:
+      - verification/properties/git_publication
+    authorities:
+    - git
+    - local-git
+  - id: publish-commit-executor
+    symbol: src/effects/publish_commit.rs#execute
+    kind: effect-executor
+    purity: effectful
+    trust: boundary
+    evidence:
+      properties:
+      - verification/properties/git_publication
+    authorities:
+    - environment
+    - filesystem
+    - git
+    - local-git
+    - process
+  - id: reconcile-commit-executor
+    symbol: src/effects/reconcile_commit.rs#execute
+    kind: effect-executor
+    purity: effectful
+    trust: boundary
+    evidence:
+      properties:
+      - verification/properties/git_publication
+    authorities:
+    - environment
+    - filesystem
+    - git
+    - local-git
+    - process
+  - id: release-lock-executor
+    symbol: src/effects/release_lock.rs#execute
+    kind: effect-executor
+    purity: effectful
+    trust: boundary
+    evidence:
+      properties:
+      - verification/properties/process_concurrency
+    authorities:
+    - filesystem
+  remove: []
+implementation_commands: null
+machine: null
+roles: null
+representation: null
+allowed_missing_constructors: null
+evidence: null
+surfaces: null
+binding_dependencies: null
+artifacts: null
+transformations: null
+authorities:
+  set: null
+  add:
+  - id: filesystem
+    kind: privileged
+    capabilities:
+    - native-filesystem-operations
+    rationale: Native directory-relative operations and lock release perform filesystem effects outside the initial confined-open facade.
+  - id: environment
+    kind: privileged
+    capabilities:
+    - read-process-environment
+    rationale: The declared crash-injection hook reads a process environment variable at native journal points.
+  - id: process
+    kind: privileged
+    capabilities:
+    - terminate-process-for-fault-injection
+    rationale: The declared crash-injection hook can terminate the process at selected journal points.
+  - id: randomness
+    kind: privileged
+    capabilities:
+    - generate-random-identifier
+    rationale: Repository identity and temporary replacement names use UUIDv4 randomness.
+  - id: git
+    kind: foreign
+    capabilities:
+    - git2-native-calls
+    rationale: Git inspection and publication call the pinned native git2 library.
+  remove: []
+protocol_bindings: null
+authority_bindings:
+  set: null
+  add:
+  - authority: filesystem
+    roles:
+    - effect_executor
+    safe_facade: src/effects/release_lock.rs#execute
+    evidence:
+    - verification/authorities/filesystem.md
+  - authority: environment
+    roles:
+    - effect_executor
+    safe_facade: src/effects/apply_filesystem.rs#execute
+    evidence:
+    - verification/authorities/environment.md
+  - authority: process
+    roles:
+    - effect_executor
+    safe_facade: src/effects/apply_filesystem.rs#execute
+    evidence:
+    - verification/authorities/process.md
+  - authority: randomness
+    roles:
+    - effect_executor
+    safe_facade: src/effects/read_snapshot.rs#execute
+    evidence:
+    - verification/authorities/randomness.md
+  - authority: git
+    roles:
+    - effect_executor
+    safe_facade: src/effects/inspect_git.rs#execute
+    evidence:
+    - verification/authorities/git.md
+  remove: []
+public_behavior_bindings: null
+dependency_behavior_bindings: null

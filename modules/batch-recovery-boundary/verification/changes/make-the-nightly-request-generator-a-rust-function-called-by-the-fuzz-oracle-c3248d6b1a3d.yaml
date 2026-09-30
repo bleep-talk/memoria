@@ -1,0 +1,82 @@
+spec: rms/semantic-change/v0.1
+module: modules/batch-recovery-boundary/module.yaml
+supersedes:
+- verification/changes/add-bounded-libfuzzer-and-clippy-nightly-realizations-for-the-native-boundary-5727b817d04c.yaml
+intent:
+  summary: Make the nightly request generator a Rust function called by the fuzz oracle.
+declaration: null
+laws: null
+contracts: null
+properties:
+  add: []
+  set:
+  - id: generated-request-validation
+    proves: parsed-host-policy
+    kind: fuzz
+    subject: null
+    input_space:
+      strategy: generated
+      generator: memory-request-generator
+    preconditions: []
+    operation:
+      kind: semantic-function
+      name: parse-memory-request
+    oracle:
+    - Generate raw library envelopes, CLI arguments, malformed JSON, missing fields, unknown operations, oversized values, and unexpected policy options.
+    - Parsing is total and returns a closed request or InvalidRequest; it never panics or performs IO.
+    - Reject invalid syntax before domain delegation and before repository effects.
+    - Host policy remains identical after every CLI input.
+    - Include traversal, absolute paths, embedded NUL, non-UTF8 OS arguments, duplicate fields, invalid hashes, integer overflow, and limit boundaries.
+    - Replay each saved counterexample using the same parser and oracle.
+    evidence:
+      kind: fuzz
+      path: verification/properties/request_validation
+    counterexamples:
+      path: verification/counterexamples/request_validation
+    realizations:
+    - profile: smoke
+      strategy: generated-property
+      command: fuzz
+      generator: tests/properties.rs#generate_requests
+      runner: tests/properties.rs#check_request_validation
+      exhaustive: false
+      owner_module: null
+      package: null
+      working_directory: null
+      test_selection: null
+    - profile: nightly
+      strategy: coverage-fuzzer
+      command: fuzz
+      generator: fuzz/fuzz_targets/request_validation.rs#generate_request
+      runner: fuzz/fuzz_targets/request_validation.rs#fuzz_one
+      exhaustive: false
+      owner_module: null
+      package: null
+      working_directory: null
+      test_selection: null
+    explorations: []
+    observations: []
+    observability: null
+    assumptions: []
+    temporal: null
+  remove: []
+hunt_exceptions: null
+proof_delegations: null
+trace_producers: null
+probe: null
+semantic_functions: null
+implementation_commands: null
+machine: null
+roles: null
+representation: null
+allowed_missing_constructors: null
+evidence: null
+surfaces: null
+binding_dependencies: null
+artifacts: null
+transformations: null
+authorities: null
+protocol_bindings: null
+authority_bindings: null
+public_behavior_bindings: null
+dependency_behavior_bindings: null

@@ -1,0 +1,301 @@
+{
+  "machine": "BatchRecoveryBoundaryMachine",
+  "records": [
+    {
+      "input": "Command(Commit)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "AcquireRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "AcquiringLock"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "begin_commit",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "AcquiringLock"
+      },
+      "state_before": {
+        "data": {},
+        "name": "Ready"
+      }
+    },
+    {
+      "input": "EffectResult(LockAcquired)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "InspectRepository"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "InspectingRepository"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": false,
+      "source": {
+        "branch": "lock_acquired",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "InspectingRepository"
+      },
+      "state_before": {
+        "data": {},
+        "name": "AcquiringLock"
+      }
+    },
+    {
+      "input": "EffectResult(RepositoryObserved(true))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "InspectJournal"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "InspectingJournal"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": false,
+      "source": {
+        "branch": "supported_repository_observed",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "InspectingJournal"
+      },
+      "state_before": {
+        "data": {},
+        "name": "InspectingRepository"
+      }
+    },
+    {
+      "input": "EffectResult(JournalObserved(Empty))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReadSnapshot"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReadingSnapshot"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": false,
+      "source": {
+        "branch": "provider_reports_no_recovery",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReadingSnapshot"
+      },
+      "state_before": {
+        "data": {},
+        "name": "InspectingJournal"
+      }
+    },
+    {
+      "input": "EffectResult(SnapshotObserved(GitNeeded))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "InspectGit"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "InspectingGit"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": false,
+      "source": {
+        "branch": "git_operation_requires_observation",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "InspectingGit"
+      },
+      "state_before": {
+        "data": {},
+        "name": "ReadingSnapshot"
+      }
+    },
+    {
+      "input": "EffectResult(GitObserved(CommitReady))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "PublishCommit"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "PublishingCommit"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": false,
+      "source": {
+        "branch": "clean_index_and_expected_head_match",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "PublishingCommit"
+      },
+      "state_before": {
+        "data": {},
+        "name": "InspectingGit"
+      }
+    },
+    {
+      "input": "EffectResult(CommitPublicationUnknown)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReconcileCommit"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReconcilingCommit"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": false,
+      "source": {
+        "branch": "uncertain_commit_requires_reconciliation",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReconcilingCommit"
+      },
+      "state_before": {
+        "data": {},
+        "name": "PublishingCommit"
+      }
+    },
+    {
+      "input": "EffectResult(PublicationReconciled(true))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReleaseRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReleasingSuccess"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": false,
+      "source": {
+        "branch": "intended_commit_confirmed_at_target_ref",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReleasingSuccess"
+      },
+      "state_before": {
+        "data": {},
+        "name": "ReconcilingCommit"
+      }
+    },
+    {
+      "input": "EffectResult(LockReleased)",
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "Ready"
+        },
+        "rejection": null,
+        "reply": {
+          "data": {},
+          "name": "OperationResult"
+        }
+      },
+      "scenario_start": false,
+      "source": {
+        "branch": "operation_result_after_resource_release",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "Ready"
+      },
+      "state_before": {
+        "data": {},
+        "name": "ReleasingSuccess"
+      }
+    }
+  ],
+  "spec": "rms/trace-bundle/v0.1"
+}

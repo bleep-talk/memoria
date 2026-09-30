@@ -1,0 +1,508 @@
+spec: rms/module/v0.1
+module:
+  name: batch-recovery-boundary
+  version: 0.1.0
+  kind: adapter
+  purpose: Expose Memoria MemoryRepo through one native Rust facade and a thin CLI. Execute repository effects under host policy and delegate pure product decisions to the required recovery capability.
+profiles:
+- boundary
+- core
+owns:
+  concepts:
+  - MemoryRepo native facade
+  - untrusted library and CLI request
+  - repository effect observation
+  - cooperating-call repository lock
+  - durable recovery journal
+  - Git publication observation
+  data:
+  - repository handles
+  - lock handles
+  - bounded journal records
+  - effect observations
+  - transition records
+  - versioned CLI output envelopes
+  decisions:
+  - input syntax parsing
+  - effect observation classification
+  - effect scheduling from canonical transitions
+  - durable filesystem execution
+  - Git publication reconciliation
+  - CLI output encoding
+provides:
+  commands:
+  - name: batch-recovery
+    contract: contracts/batch-recovery.v1.yaml
+  queries: []
+  events: []
+  capabilities:
+  - name: memoria-memory
+    contract: contracts/memoria-memory.v1.yaml
+requires:
+  modules:
+  - name: batch-recovery-decisions
+  capabilities:
+  - name: resolve-batch-recovery-capability
+    contract: contracts/resolve-batch-recovery-capability.v1.yaml
+invariants:
+- id: parsed-host-policy
+  statement: Every public request is parsed into a closed operation envelope or a typed invalid-input rejection. CLI input never changes host policy.
+  kind: safety
+  authority: parser
+  enforced_by: parse-memory-request
+- id: canonical-effect-order
+  statement: One pure transition owns each outcome-dependent phase. The driver executes only recorded effects and feeds one correlated typed result back per request. Illegal state/input combinations cannot cause effects or advance state.
+  kind: safety
+  authority: transition
+  enforced_by: transition-model
+- id: confined-serialized-storage
+  statement: Repository effects use fd-relative no-follow operations beneath the exact four provider-declared conventional roots. Managed entries are directories or regular files. Symlinks, special files, bare repositories, linked worktrees, and submodules are rejected. One lock serializes cooperating calls through recovery and completion.
+  kind: safety
+  authority: effect-executor
+  enforced_by: filesystem-support
+- id: bounded-durable-recovery
+  statement: Provider validation and optimistic expected-hash checks precede requested writes. Journal entry count, encoded bytes, backup bytes, and mutation bytes obey checked host limits. Durable journal precedes apply; durable completion precedes success. Incomplete journals roll back and complete journals clean up. Unexpected external edits cause RecoveryConflict without destructive recovery.
+  kind: safety
+  authority: transition
+  enforced_by: transition-model
+- id: fenced-git-publication
+  statement: Commit is separate from filesystem apply. Pre-existing staged changes reject commit. Publication fences expected HEAD, including unborn HEAD, and uncertain publication is reconciled against the intended commit and reference identity. No checkout, hook execution, or networking occurs.
+  kind: safety
+  authority: transition
+  enforced_by: transition-model
+- id: reusable-native-facade
+  statement: All fifteen operations are available through one native MemoryRepo facade. The memoria CLI calls that facade and emits stable versioned JSON results and errors. Native package consumers need no CLI internals.
+  kind: safety
+  authority: transition
+  enforced_by: transition-model
+effects:
+- name: AcquireRepoLock
+  kind: filesystem
+- name: InspectRepository
+  kind: filesystem
+- name: InspectJournal
+  kind: filesystem
+- name: RollbackJournal
+  kind: filesystem
+- name: CleanupJournal
+  kind: filesystem
+- name: ReadSnapshot
+  kind: filesystem
+- name: PersistJournal
+  kind: filesystem
+- name: ApplyFilesystemPlan
+  kind: filesystem
+- name: PersistCompletion
+  kind: filesystem
+- name: InspectGit
+  kind: local-process
+- name: PublishCommit
+  kind: local-process
+- name: ReconcileCommit
+  kind: local-process
+- name: ReleaseRepoLock
+  kind: filesystem
+- name: cli-io
+  kind: local-ui
+authorities:
+- id: repository-io
+  kind: privileged
+  capabilities:
+  - fd-relative-filesystem-access
+  - no-follow-open
+  - file-lock
+  - durable-flush
+  rationale: Repository effects require confined native filesystem and lock operations.
+- id: local-git
+  kind: foreign
+  capabilities:
+  - git2-local-object-access
+  - git2-conditional-reference-update
+  rationale: Local Git observations and fenced publication use git2 without hooks or networking.
+- id: cli-stdio
+  kind: privileged
+  capabilities:
+  - read-command-input
+  - write-json-stdout
+  - write-diagnostics-stderr
+  rationale: The thin CLI transports library requests and encodes versioned results.
+- id: filesystem
+  kind: privileged
+  capabilities:
+  - native-filesystem-operations
+  rationale: Native directory-relative operations and lock release perform filesystem effects outside the initial confined-open facade.
+- id: environment
+  kind: privileged
+  capabilities:
+  - read-process-environment
+  rationale: The declared crash-injection hook reads a process environment variable at native journal points.
+- id: process
+  kind: privileged
+  capabilities:
+  - terminate-process-for-fault-injection
+  rationale: The declared crash-injection hook can terminate the process at selected journal points.
+- id: randomness
+  kind: privileged
+  capabilities:
+  - generate-random-identifier
+  rationale: Repository identity and temporary replacement names use UUIDv4 randomness.
+- id: git
+  kind: foreign
+  capabilities:
+  - git2-native-calls
+  rationale: Git inspection and publication call the pinned native git2 library.
+boundary:
+  trust_boundary: native-repository-and-cli
+  inputs:
+  - untrusted library operation arguments
+  - untrusted CLI arguments and JSON
+  - host-supplied immutable policy
+  - filesystem and journal observations
+  - Git repository and reference observations
+  outputs:
+  - typed MemoryRepo results and errors
+  - versioned JSON CLI results and errors
+  - bounded filesystem mutations
+  - separately requested local Git commits
+  validation:
+  - Parse library and CLI inputs before acquiring mutation authority.
+  - Delegate product validation to the exact required provider.
+  - Accept policy only from the host; expose no CLI policy override.
+  - Reject unsupported repository forms and unsafe managed paths.
+  - Validate a complete requested mutation before writing its journal.
+  - Treat effect results as typed observations, never as permission to skip a phase.
+compatibility:
+  policy: backward-compatible-within-major
+verification:
+  laws:
+  - verification/laws/parsed_host_policy.md
+  - verification/laws/canonical_effect_order.md
+  - verification/laws/confined_serialized_storage.md
+  - verification/laws/bounded_durable_recovery.md
+  - verification/laws/fenced_git_publication.md
+  - verification/laws/reusable_native_facade.md
+  contracts:
+  - verification/contracts/batch-recovery.md
+  - verification/contracts/resolve-batch-recovery-dependency.md
+  - verification/contracts/parser_to_domain_command.md
+  - verification/contracts/memoria_memory.md
+  - verification/contracts/memoria_cli.md
+  - verification/contracts/resolve_batch_recovery_provider_sync.md
+  scenarios: []
+  boundaries:
+  - verification/boundaries/malformed_input.md
+  fuzz:
+  - verification/fuzz/malformed_input_fuzz.md
+  - verification/properties/request_validation
+  properties:
+  - verification/properties/phase_protocol
+  - verification/properties/provider_routing
+  - verification/properties/git_publication
+  - verification/properties/public_operations
+  - verification/properties/crash_recovery
+  - verification/properties/process_concurrency
+  - verification/properties/external_consumer
+  - verification/properties/filesystem_safety
+  reconciliation:
+  - verification/reconciliation/journal_recovery.md
+  - verification/reconciliation/git_publication.md
+x-rms:
+  last_semantic_intent: Record producer-created public result types without public constructors.
+  semantic_revision:
+    digest: sha256:a2684fda3fe6afdf162b8013ffe5bd26dd7d9a1ce2c3eccff4d3e71ffc2e8923
+    change_record: verification/changes/record-producer-created-public-result-types-without-public-constructors-b26e33ff0965.yaml
+    change_record_digest: sha256:b26e33ff0965856e26ced58ef23cd4336cbb746fe8aca0d2b4fcfd8bd1670773
+    applied_by: rms spec apply
+fuzz_targets:
+- id: generated-request-validation
+  proves: parsed-host-policy
+  kind: fuzz
+  input_space:
+    strategy: generated
+    generator: memory-request-generator
+  operation:
+    kind: semantic-function
+    name: parse-memory-request
+  oracle:
+  - Generate raw library envelopes, CLI arguments, malformed JSON, missing fields, unknown operations, oversized values, and unexpected policy options.
+  - Parsing is total and returns a closed request or InvalidRequest; it never panics or performs IO.
+  - Reject invalid syntax before domain delegation and before repository effects.
+  - Host policy remains identical after every CLI input.
+  - Include traversal, absolute paths, embedded NUL, non-UTF8 OS arguments, duplicate fields, invalid hashes, integer overflow, and limit boundaries.
+  - Replay each saved counterexample using the same parser and oracle.
+  evidence:
+    path: verification/properties/request_validation
+  counterexamples:
+    path: verification/counterexamples/request_validation
+  realizations:
+  - profile: smoke
+    strategy: generated-property
+    command: fuzz
+    generator: tests/properties.rs#generate_requests
+    runner: tests/properties.rs#check_request_validation
+  - profile: nightly
+    strategy: coverage-fuzzer
+    command: fuzz
+    generator: fuzz/fuzz_targets/request_validation.rs#generate_request
+    runner: fuzz/fuzz_targets/request_validation.rs#fuzz_one
+properties:
+- id: phase-protocol
+  proves: canonical-effect-order
+  kind: semantic
+  input_space:
+    strategy: generated
+    generator: memory-phase-schedule-generator
+  operation:
+    kind: semantic-function
+    name: transition-model
+  oracle:
+  - Generate valid, illegal, stale, duplicate, delayed, and mismatched-correlation inputs across every declared state.
+  - Every legal input selects exactly one case; every other state/input pair returns IllegalTransition with unchanged state and empty effect output.
+  - Discriminate same-state same-input cases using typed observations and provider decisions, never executor-owned business branches.
+  - Record state before, input, complete output, state after, and source provenance for every transition.
+  - The driver retains every complete record, advances from state_after, executes only output.effects, and feeds each correlated result into the pure transition.
+  - A rejected unrelated input cannot discard an in-flight request or release its resources.
+  - LockReleaseError is emitted only after the executor closes the owned lock descriptor; an earlier unlock failure cannot falsely report an unheld resource.
+  - Recovery after interrupted apply retains the original failure; after recovery the request returns an error and is not silently retried or converted into success.
+  - No finite operation path returns with an owned lock; process death releases its OS lock without marking its journal complete.
+  evidence:
+    path: verification/properties/phase_protocol
+  counterexamples:
+    path: verification/counterexamples/phase_protocol
+  realizations:
+  - profile: smoke
+    strategy: generated-property
+    command: fuzz
+    generator: tests/properties.rs#generate_phase_schedules
+    runner: tests/properties.rs#check_phase_protocol
+- id: provider-decision-routing
+  proves: canonical-effect-order
+  kind: semantic
+  input_space:
+    strategy: generated
+    generator: provider-observation-generator
+  preconditions:
+  - The provider has applied product semantics and the required contract is synced byte-for-byte.
+  operation:
+    kind: semantic-function
+    name: transition-model
+  oracle:
+  - Every product validation, expected-hash comparison, context/tree rendering, and recovery decision is obtained from the exact bound capability.
+  - Compare provider results and boundary transition outputs for generated observations and requests.
+  - The provider receives immutable typed observations and performs no filesystem or Git IO.
+  - The boundary cannot accept a request rejected by the provider or invent conventional root names.
+  evidence:
+    path: verification/properties/provider_routing
+  counterexamples:
+    path: verification/counterexamples/provider_routing
+  realizations:
+  - profile: smoke
+    strategy: generated-property
+    command: fuzz
+    generator: tests/properties.rs#generate_provider_observations
+    runner: tests/properties.rs#check_provider_routing
+- id: commit-publication-schedules
+  proves: fenced-git-publication
+  kind: semantic
+  input_space:
+    strategy: generated
+    generator: git-publication-schedule-generator
+  operation:
+    kind: semantic-function
+    name: transition-model
+  oracle:
+  - Generate born and unborn HEAD, staged changes, clean index, expected-HEAD mismatch, reference replacement, and publication failures.
+  - Write, delete, apply, init, and open never publish commits.
+  - Status, diff, and log are read operations and do not stage, checkout, or publish.
+  - Commit rejects pre-existing staged changes before preparing its own publication.
+  - Prepare commit content without modifying the caller's index and limit committed changes to provider-approved managed content.
+  - Conditional reference publication checks both the intended reference identity and expected old HEAD at publication time.
+  - Retain expected HEAD, target reference, intended commit identity, and enough bounded durable reconciliation data to reopen after uncertain publication.
+  - Reconcile an unknown update by observing the target reference; intended commit means published, expected old value means not published, and another value means PublicationConflict.
+  - An unreadable publication state returns PublicationUnknown and never retries a blind reference update.
+  - Inject crash and IO failure around object durability, reference update, publication observation, and reconciliation cleanup.
+  - No code path invokes hooks, checkout, network transport, or a Git subprocess.
+  evidence:
+    path: verification/properties/git_publication
+  counterexamples:
+    path: verification/counterexamples/git_publication
+  realizations:
+  - profile: smoke
+    strategy: generated-property
+    command: fuzz
+    generator: tests/properties.rs#generate_git_schedules
+    runner: tests/properties.rs#check_git_publication
+- id: public-operation-routing
+  proves: reusable-native-facade
+  kind: semantic
+  input_space:
+    strategy: generated
+    generator: native-operation-generator
+  preconditions:
+  - The provider contract defines the fixed roots and exact operation values.
+  operation:
+    kind: semantic-function
+    name: transition-model
+  oracle:
+  - Exercise all fifteen public operations with valid, invalid, missing, conflicting, and bounded-limit inputs.
+  - Each facade method produces the corresponding closed machine command and reaches the same driver.
+  - Open and every subsequent operation inspect recovery state while holding the same repository lock.
+  - Read-only operations can perform required recovery but cannot perform an unrelated requested mutation.
+  - Exists distinguishes absence from unsafe paths and IO failures.
+  - List, metadata, context, and tree use the provider's ordering, limits, and rendering decisions.
+  - Status, diff, and log return typed local Git observations; commit remains separate.
+  - Invalid input has an empty effect frame; operational errors expose any pending recovery state.
+  evidence:
+    path: verification/properties/public_operations
+  counterexamples:
+    path: verification/counterexamples/public_operations
+  realizations:
+  - profile: smoke
+    strategy: generated-property
+    command: fuzz
+    generator: tests/properties.rs#generate_native_operations
+    runner: tests/properties.rs#check_public_operations
+- id: crash-and-failure-schedules
+  proves: bounded-durable-recovery
+  kind: semantic
+  input_space:
+    strategy: generated
+    generator: journal-crash-schedule-generator
+  preconditions:
+  - The provider recovery contract has product semantics.
+  operation:
+    kind: semantic-function
+    name: transition-model
+  oracle:
+  - Generate batches, absent/present expected hashes, duplicate paths, ancestor collisions, deletion cases, empty batches, and all host-limit boundaries.
+  - Validate the whole batch against the locked snapshot before persisting its journal.
+  - Journal schema version 1 records repository identity, transaction identity, bounded entries, before/after hashes, recovery data, and completion state.
+  - Bound decoding, allocation, entry count, backup bytes, and total encoded bytes with checked arithmetic.
+  - Inject short writes, interruption, disk-full errors, failed flushes, rename failures, cleanup failures, and crashes before and after each durable step.
+  - A partial journal that has not enabled apply cannot authorize rollback of arbitrary paths.
+  - An incomplete journal restores the pre-apply state when observed files match permitted before/after states.
+  - Recovery rechecks each destination before mutation and preserves unexpected content with RecoveryConflict.
+  - Repeated crashes during rollback or cleanup remain recoverable and do not erase conflict evidence.
+  - A complete durable journal is cleaned without rolling back its committed filesystem state.
+  - No apply effect precedes JournalDurable and no successful mutation reply precedes CompletionDurable.
+  - A failed apply is never automatically replayed as a new user request.
+  - Errors retain the original operation failure and report pending recovery or cleanup when applicable.
+  evidence:
+    path: verification/properties/crash_recovery
+  counterexamples:
+    path: verification/counterexamples/crash_recovery
+  realizations:
+  - profile: smoke
+    strategy: generated-property
+    command: fuzz
+    generator: tests/properties.rs#generate_crash_schedules
+    runner: tests/properties.rs#check_crash_recovery
+  - profile: ci
+    strategy: integration-test
+    command: integration
+    runner: modules/batch-recovery-boundary/tests/concurrency.rs#crash_restart_recovers
+    owner_module: batch-recovery-boundary
+    package: memoria-memory
+    working_directory: modules/batch-recovery-boundary
+    test_selection: crash_restart_recovers
+- id: real-process-serialization
+  proves: confined-serialized-storage
+  kind: semantic
+  input_space:
+    strategy: generated
+    generator: two-process-operation-schedules
+  preconditions:
+  - Two independent OS processes use the same repository and host policy.
+  operation:
+    kind: semantic-function
+    name: memory-repo-facade
+  oracle:
+  - Spawn two real processes; thread-only tests do not satisfy this property.
+  - Use barriers to overlap lock acquisition, expected-hash validation, apply, recovery, and commit.
+  - Two writes with the same expected hash cannot both report successful conflicting updates.
+  - A read cannot observe a cooperating writer's partially applied batch.
+  - Killing a lock owner releases the OS lock and the next process recovers its incomplete journal before continuing.
+  - Distinct path spellings for the same supported repository resolve to the same lock identity.
+  - An external noncooperating edit is preserved and reported as RecoveryConflict when recovery encounters it.
+  - Record the selected test count and child exit results.
+  evidence:
+    path: verification/properties/process_concurrency
+  counterexamples:
+    path: verification/counterexamples/process_concurrency
+  realizations:
+  - profile: ci
+    strategy: integration-test
+    command: integration
+    runner: modules/batch-recovery-boundary/tests/concurrency.rs#two_process_repository_serialization
+    owner_module: batch-recovery-boundary
+    package: memoria-memory
+    working_directory: modules/batch-recovery-boundary
+    test_selection: two_process_repository_serialization
+- id: external-consumer-and-cli
+  proves: reusable-native-facade
+  kind: semantic
+  input_space:
+    strategy: generated
+    generator: package-and-cli-request-cases
+  operation:
+    kind: semantic-function
+    name: memory-repo-facade
+  oracle:
+  - Create an independent temporary Cargo consumer outside the library workspace and import the public memoria-memory package.
+  - Compile and exercise MemoryRepo through src/lib.rs exports without private source imports or CLI dependencies.
+  - Build the separate nested CLI crate and verify that its binary is named memoria.
+  - Run CLI cases for all operations and compare results with direct library calls.
+  - Every CLI response uses schema_version 1 and a stable accepted, invalid-request, or operation-error envelope.
+  - Errors expose stable codes and typed details; error messages are not parsed as the protocol.
+  - JSON stdout contains exactly one response; diagnostic stderr does not contaminate it.
+  - Invalid UTF8 arguments, malformed JSON, broken output pipes, unknown commands, and oversized input receive defined nonpanic handling.
+  - No CLI option overrides host policy or enables checkout, hooks, networking, bare repositories, worktrees, or submodules.
+  - Project just recipes invoke native Rust commands and selector recipes select at least one exact test rather than silently running zero tests.
+  evidence:
+    path: verification/properties/external_consumer
+  counterexamples:
+    path: verification/counterexamples/external_consumer
+  realizations:
+  - profile: ci
+    strategy: integration-test
+    command: integration
+    runner: modules/batch-recovery-boundary/tests/package_consumer.rs#external_consumer_and_cli
+    owner_module: batch-recovery-boundary
+    package: memoria-memory
+    working_directory: modules/batch-recovery-boundary
+    test_selection: external_consumer_and_cli
+- id: repository-effect-safety
+  proves: confined-serialized-storage
+  kind: semantic
+  input_space:
+    strategy: generated
+    generator: filesystem-topology-generator
+  preconditions:
+  - The host supplies a trusted repository anchor, fixed provider roots, and bounded policy.
+  operation:
+    kind: semantic-function
+    name: filesystem-support
+  oracle:
+  - Generate regular files, directories, symlinks at every path component, special files, missing parents, replacement races, and malformed repositories.
+  - Resolve and mutate through retained directory descriptors with no-follow checks; never validate a path and later reopen it by unchecked absolute spelling.
+  - No managed operation escapes the four fixed roots or follows a symlink.
+  - Internal lock, journal, and Git metadata are reserved control storage and cannot be addressed as managed memory paths.
+  - Reject bare repositories, linked worktrees, and submodules before requested mutation.
+  - Read paths do not accept special files or block on FIFO/device input.
+  - Init coordinates through the trusted anchor even before repository creation and journals managed-root creation.
+  - Required file and parent-directory durability steps are observable; unsupported durability or no-follow behavior fails closed.
+  - Document the limit that advisory locks do not make arbitrary hostile external writers participate in serialization.
+  evidence:
+    path: verification/properties/filesystem_safety
+  counterexamples:
+    path: verification/counterexamples/filesystem_safety
+  realizations:
+  - profile: smoke
+    strategy: generated-property
+    command: fuzz
+    generator: tests/properties.rs#generate_filesystem_topologies
+    runner: tests/properties.rs#check_filesystem_safety
+  - profile: nightly
+    strategy: static-analyzer
+    command: fuzz
+    runner: tools/static_analysis.sh#run

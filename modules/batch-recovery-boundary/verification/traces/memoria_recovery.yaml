@@ -1,0 +1,268 @@
+{
+  "machine": "BatchRecoveryBoundaryMachine",
+  "records": [
+    {
+      "input": "Command(Open)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "AcquireRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "AcquiringLock"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "begin_open",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "AcquiringLock"
+      },
+      "state_before": {
+        "data": {},
+        "name": "Ready"
+      }
+    },
+    {
+      "input": "EffectResult(LockAcquired)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "InspectRepository"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "InspectingRepository"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": false,
+      "source": {
+        "branch": "lock_acquired",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "InspectingRepository"
+      },
+      "state_before": {
+        "data": {},
+        "name": "AcquiringLock"
+      }
+    },
+    {
+      "input": "EffectResult(RepositoryObserved(true))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "InspectJournal"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "InspectingJournal"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": false,
+      "source": {
+        "branch": "supported_repository_observed",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "InspectingJournal"
+      },
+      "state_before": {
+        "data": {},
+        "name": "InspectingRepository"
+      }
+    },
+    {
+      "input": "EffectResult(JournalObserved(Incomplete))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "RollbackJournal"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "RollingBack"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": false,
+      "source": {
+        "branch": "provider_requires_rollback",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "RollingBack"
+      },
+      "state_before": {
+        "data": {},
+        "name": "InspectingJournal"
+      }
+    },
+    {
+      "input": "EffectResult(RollbackDurable(false))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "CleanupJournal"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "CleaningRecoveredJournal"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": false,
+      "source": {
+        "branch": "rollback_durable",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "CleaningRecoveredJournal"
+      },
+      "state_before": {
+        "data": {},
+        "name": "RollingBack"
+      }
+    },
+    {
+      "input": "EffectResult(JournalCleanupDurable)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReadSnapshot"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReadingSnapshot"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": false,
+      "source": {
+        "branch": "recovered_journal_cleaned",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReadingSnapshot"
+      },
+      "state_before": {
+        "data": {},
+        "name": "CleaningRecoveredJournal"
+      }
+    },
+    {
+      "input": "EffectResult(SnapshotObserved(ReadReady))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReleaseRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReleasingSuccess"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": false,
+      "source": {
+        "branch": "provider_returns_read_or_noop_result",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReleasingSuccess"
+      },
+      "state_before": {
+        "data": {},
+        "name": "ReadingSnapshot"
+      }
+    },
+    {
+      "input": "EffectResult(LockReleased)",
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "Ready"
+        },
+        "rejection": null,
+        "reply": {
+          "data": {},
+          "name": "OperationResult"
+        }
+      },
+      "scenario_start": false,
+      "source": {
+        "branch": "operation_result_after_resource_release",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "Ready"
+      },
+      "state_before": {
+        "data": {},
+        "name": "ReleasingSuccess"
+      }
+    }
+  ],
+  "spec": "rms/trace-bundle/v0.1"
+}

@@ -1,0 +1,223 @@
+spec: rms/contract/v0.3
+name: resolve-batch-recovery
+version: '1'
+kind: command
+meaning: |
+  Evaluate DecideMemory, BeginBatch, ObserveRecovery, or ResumeRecovery.
+  DecideMemory contains ValidatePath, ValidatePolicy, ValidateMarkdown,
+  RenderContext, or RenderTree. BeginBatch contains host Policy, a current
+  working snapshot, caller-supplied batch identity, and guarded mutations.
+  ObserveRecovery advances an active plan from supplied observations.
+  ResumeRecovery reconstructs a batch decision from validated recovery
+  records and current observations. No command performs native effects.
+semantics:
+  behavior:
+    observability: full
+    observations:
+    - id: outcome-MemoryDecision
+      source:
+        kind: output
+        output_kind: reply
+        name: MemoryDecision
+      value: occurrence
+    - id: outcome-BatchPlan
+      source:
+        kind: output
+        output_kind: reply
+        name: BatchPlan
+      value: occurrence
+    - id: outcome-BatchSettled
+      source:
+        kind: output
+        output_kind: reply
+        name: BatchSettled
+      value: occurrence
+    - id: outcome-MemoryRejected
+      source:
+        kind: output
+        output_kind: rejection
+        name: MemoryRejected
+      value: occurrence
+    - id: outcome-IllegalTransition
+      source:
+        kind: output
+        output_kind: rejection
+        name: IllegalTransition
+      value: occurrence
+    assumptions:
+    - id: boundary-snapshot-and-durability
+      statement: |
+        Execution claims require the caller to supply faithful working
+        snapshots and durability observations and to execute plans with
+        root confinement, serialization, hash rechecks, and durability
+        ordering. Git data describes committed history only.
+      evaluation:
+        kind: external
+        property: memoria-recovery-property
+    requires:
+    - id: valid-request
+      statement: |
+        Validate raw path and Markdown values, host Policy, snapshot
+        uniqueness, mutation preconditions, and recovery observations;
+        invalid values are rejected, not caller obligations.
+      evaluation:
+        kind: external
+        property: memoria-total-decision-property
+    guarantees:
+    - id: explicit-outcome
+      statement: |
+        Return a complete deterministic projection, a typed executable
+        plan, an observed terminal outcome, or a typed rejection.
+      evaluation:
+        kind: external
+        property: memoria-total-decision-property
+    - id: complete-context
+      statement: Context contains all eligible system Markdown or rejects the complete output.
+      evaluation:
+        kind: external
+        property: memoria-rendering-property
+    - id: recoverable-plans
+      statement: Recovery uses durable marker evidence and rejects unexpected contents.
+      evaluation:
+        kind: external
+        property: memoria-recovery-property
+    failures:
+    - id: rejected-request
+      statement: |
+        MemoryRejected carries exactly one typed reason:
+        InvalidPath, InvalidPolicy, ProtectedMutation, MalformedYaml,
+        InvalidDescription, InvalidUtf8, ParserLimitExceeded,
+        DuplicateTarget, DuplicateSnapshotPath, StaleWrite,
+        ContextTooLarge, UnsupportedEntryKind, EmptyBatch,
+        UnexpectedRecoveryContents, InvalidRecoveryRecord,
+        StaleObservation, ConflictingObservation, ForeignBatch,
+        or ArithmeticOverflow. It carries no executable plan.
+      evaluation:
+        kind: external
+        property: memoria-total-decision-property
+    - id: illegal-lifecycle
+      statement: IllegalTransition preserves state and carries no executable plan.
+      evaluation:
+        kind: external
+        property: memoria-recovery-property
+    cases:
+    - id: memory-result
+      statement: A pure validation or rendering request returns its typed result.
+      when:
+        equals:
+          left:
+            observation: outcome-MemoryDecision
+          right:
+            literal: true
+      outcome:
+        kind: accepted
+        expression:
+          equals:
+            left:
+              observation: outcome-MemoryDecision
+            right:
+              literal: true
+      ensures: []
+      permits:
+        state_changes: []
+        events: []
+        effects: []
+    - id: batch-plan-result
+      statement: A valid lifecycle request returns a typed plan and retained decision state.
+      when:
+        equals:
+          left:
+            observation: outcome-BatchPlan
+          right:
+            literal: true
+      outcome:
+        kind: accepted
+        expression:
+          equals:
+            left:
+              observation: outcome-BatchPlan
+            right:
+              literal: true
+      ensures: []
+      permits:
+        state_changes:
+        - /state
+        events: []
+        effects: []
+    - id: settled-result
+      statement: Confirmed final recovery observations return Applied or RolledBack.
+      when:
+        equals:
+          left:
+            observation: outcome-BatchSettled
+          right:
+            literal: true
+      outcome:
+        kind: accepted
+        expression:
+          equals:
+            left:
+              observation: outcome-BatchSettled
+            right:
+              literal: true
+      ensures: []
+      permits:
+        state_changes:
+        - /state
+        events: []
+        effects: []
+    - id: invalid-memory-request
+      statement: Invalid data returns a typed rejection with an empty change frame.
+      when:
+        equals:
+          left:
+            observation: outcome-MemoryRejected
+          right:
+            literal: true
+      outcome:
+        kind: rejected
+        category: rejected-request
+        expression:
+          equals:
+            left:
+              observation: outcome-MemoryRejected
+            right:
+              literal: true
+      ensures: []
+      permits:
+        state_changes: []
+        events: []
+        effects: []
+    - id: illegal-state-request
+      statement: An illegal state/input pair returns a lifecycle rejection.
+      when:
+        equals:
+          left:
+            observation: outcome-IllegalTransition
+          right:
+            literal: true
+      outcome:
+        kind: rejected
+        category: illegal-lifecycle
+        expression:
+          equals:
+            left:
+              observation: outcome-IllegalTransition
+            right:
+              literal: true
+      ensures: []
+      permits:
+        state_changes: []
+        events: []
+        effects: []
+    invariants:
+    - id: pure-public-outcome
+      statement: Public invocation performs no IO and is deterministic.
+      evaluation:
+        kind: external
+        property: memoria-total-decision-property
+    case_policy:
+      coverage: exhaustive
+      overlap: forbidden
+compatibility:
+  policy: backward-compatible-within-major

@@ -1,0 +1,70 @@
+spec: rms/module/v0.1
+module:
+  name: batch-recovery
+  version: 0.1.0
+  kind: composite
+  purpose: Implement Memoria as a standalone Rust memory library and thin CLI. MemoryRepo exposes init, open, read, write, delete, exists, list, read_metadata, apply, build_context, tree, status, diff, commit and log. The domain owns relative Markdown paths, host-owned policy, expected content hashes, deterministic bounded JSON context and tree projections, batch validation, and the recoverable batch lifecycle. A native Rust boundary owns directory-relative no-follow filesystem access, a repository lock, a bounded durable recovery journal under .git, fsync and atomic replacements, and git2 version history with fenced commit publication. Pure decisions and recovery transitions receive typed observed facts and emit typed effect requests; dedicated executors perform IO and return facts. Expose the reusable library public facade and bind a CLI to that facade. Ordinary Markdown and Git remain inspectable; system, knowledge, skills and conversations are default roots. Reject stale writes and protect system/identity.md and system/policy.md. Roll back incomplete batches; completed batches only need cleanup; preserve unexpected external edits with RecoveryConflict. No search, LLM, networking, checkout or automatic intelligence. Support macOS and Linux local filesystems. Provide property, fault-injection, process-crash, native integration and external package-consumer proof.
+profiles:
+- core
+owns:
+  concepts:
+  - public capability surface
+  - child module composition
+  data: []
+  decisions:
+  - public export composition
+  - child visibility
+provides:
+  commands:
+  - name: batch-recovery
+    contract: contracts/batch-recovery.v1.yaml
+  queries: []
+  events: []
+  capabilities: []
+requires:
+  modules: []
+  capabilities: []
+composition:
+  contains:
+  - name: batch-recovery-decisions
+    visibility: internal
+    path: ../batch-recovery-decisions/module.yaml
+  - name: batch-recovery-boundary
+    visibility: internal
+    path: ../batch-recovery-boundary/module.yaml
+  exports:
+  - group: commands
+    name: batch-recovery
+    from: batch-recovery-boundary
+    contract: contracts/batch-recovery.v1.yaml
+invariants:
+- id: public-command-is-child-backed
+  statement: The parent public command is backed by the declared boundary child and its domain dependency.
+  authority: composition
+  enforced_by: composition
+  verified_by: verification/scenarios/composed_capability.md
+effects: []
+compatibility:
+  policy: backward-compatible-within-major
+verification:
+  laws: []
+  contracts:
+  - verification/contracts/parent_export.md
+  - verification/contracts/batch-recovery.md
+  scenarios:
+  - verification/scenarios/composed_capability.md
+  boundaries: []
+x-scaffold:
+  shape: composite
+  roles:
+  - submodule-containment
+  - public-exports
+  - visibility-boundaries
+  - composition-evidence
+x-rms:
+  last_semantic_intent: Synchronize the composite public batch-recovery command with the existing Memoria boundary CLI contract.
+  semantic_revision:
+    digest: sha256:e9822c8abb5711b1501ba948bd09b0a225d23410141c16f589d707c5f153b6d8
+    change_record: verification/changes/synchronize-the-composite-public-batch-recovery-command-with-the-existing-memoria-boundary-cli-contract-5ff66b122a59.yaml
+    change_record_digest: sha256:5ff66b122a596c6908bd35cc5f5bc3d813c40a87d8c8b22ea641ce8b6674a338
+    applied_by: rms spec apply

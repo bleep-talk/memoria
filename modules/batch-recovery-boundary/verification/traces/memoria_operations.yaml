@@ -1,0 +1,1974 @@
+{
+  "machine": "BatchRecoveryBoundaryMachine",
+  "records": [
+    {
+      "input": "Command(Init)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "AcquireRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "AcquiringLock"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "begin_init",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "AcquiringLock"
+      },
+      "state_before": {
+        "data": {},
+        "name": "Ready"
+      }
+    },
+    {
+      "input": "Command(Open)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "AcquireRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "AcquiringLock"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "begin_open",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "AcquiringLock"
+      },
+      "state_before": {
+        "data": {},
+        "name": "Ready"
+      }
+    },
+    {
+      "input": "Command(Read)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "AcquireRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "AcquiringLock"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "begin_read",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "AcquiringLock"
+      },
+      "state_before": {
+        "data": {},
+        "name": "Ready"
+      }
+    },
+    {
+      "input": "Command(Write)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "AcquireRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "AcquiringLock"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "begin_write",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "AcquiringLock"
+      },
+      "state_before": {
+        "data": {},
+        "name": "Ready"
+      }
+    },
+    {
+      "input": "Command(Delete)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "AcquireRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "AcquiringLock"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "begin_delete",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "AcquiringLock"
+      },
+      "state_before": {
+        "data": {},
+        "name": "Ready"
+      }
+    },
+    {
+      "input": "Command(Exists)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "AcquireRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "AcquiringLock"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "begin_exists",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "AcquiringLock"
+      },
+      "state_before": {
+        "data": {},
+        "name": "Ready"
+      }
+    },
+    {
+      "input": "Command(List)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "AcquireRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "AcquiringLock"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "begin_list",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "AcquiringLock"
+      },
+      "state_before": {
+        "data": {},
+        "name": "Ready"
+      }
+    },
+    {
+      "input": "Command(ReadMetadata)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "AcquireRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "AcquiringLock"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "begin_read_metadata",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "AcquiringLock"
+      },
+      "state_before": {
+        "data": {},
+        "name": "Ready"
+      }
+    },
+    {
+      "input": "Command(Apply)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "AcquireRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "AcquiringLock"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "begin_apply",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "AcquiringLock"
+      },
+      "state_before": {
+        "data": {},
+        "name": "Ready"
+      }
+    },
+    {
+      "input": "Command(BuildContext)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "AcquireRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "AcquiringLock"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "begin_build_context",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "AcquiringLock"
+      },
+      "state_before": {
+        "data": {},
+        "name": "Ready"
+      }
+    },
+    {
+      "input": "Command(Tree)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "AcquireRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "AcquiringLock"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "begin_tree",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "AcquiringLock"
+      },
+      "state_before": {
+        "data": {},
+        "name": "Ready"
+      }
+    },
+    {
+      "input": "Command(Status)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "AcquireRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "AcquiringLock"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "begin_status",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "AcquiringLock"
+      },
+      "state_before": {
+        "data": {},
+        "name": "Ready"
+      }
+    },
+    {
+      "input": "Command(Diff)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "AcquireRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "AcquiringLock"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "begin_diff",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "AcquiringLock"
+      },
+      "state_before": {
+        "data": {},
+        "name": "Ready"
+      }
+    },
+    {
+      "input": "Command(Commit)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "AcquireRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "AcquiringLock"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "begin_commit",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "AcquiringLock"
+      },
+      "state_before": {
+        "data": {},
+        "name": "Ready"
+      }
+    },
+    {
+      "input": "Command(Log)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "AcquireRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "AcquiringLock"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "begin_log",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "AcquiringLock"
+      },
+      "state_before": {
+        "data": {},
+        "name": "Ready"
+      }
+    },
+    {
+      "input": "Command(InvalidRequestInput)",
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "Ready"
+        },
+        "rejection": {
+          "data": {},
+          "name": "InvalidRequest"
+        },
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "invalid_request_without_effects",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "Ready"
+      },
+      "state_before": {
+        "data": {},
+        "name": "Ready"
+      }
+    },
+    {
+      "input": "EffectResult(LockAcquired)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "InspectRepository"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "InspectingRepository"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "lock_acquired",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "InspectingRepository"
+      },
+      "state_before": {
+        "data": {},
+        "name": "AcquiringLock"
+      }
+    },
+    {
+      "input": "EffectResult(LockUnavailable)",
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "Ready"
+        },
+        "rejection": {
+          "data": {},
+          "name": "OperationError"
+        },
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "lock_unavailable",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "Ready"
+      },
+      "state_before": {
+        "data": {},
+        "name": "AcquiringLock"
+      }
+    },
+    {
+      "input": "EffectResult(RepositoryObserved(true))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "InspectJournal"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "InspectingJournal"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "supported_repository_observed",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "InspectingJournal"
+      },
+      "state_before": {
+        "data": {},
+        "name": "InspectingRepository"
+      }
+    },
+    {
+      "input": "EffectResult(RepositoryObserved(false))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReleaseRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReleasingError"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "unsupported_repository_observed",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReleasingError"
+      },
+      "state_before": {
+        "data": {},
+        "name": "InspectingRepository"
+      }
+    },
+    {
+      "input": "EffectResult(RepositoryInspectionError)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReleaseRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReleasingError"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "repository_inspection_error",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReleasingError"
+      },
+      "state_before": {
+        "data": {},
+        "name": "InspectingRepository"
+      }
+    },
+    {
+      "input": "EffectResult(JournalObserved(Empty))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReadSnapshot"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReadingSnapshot"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "provider_reports_no_recovery",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReadingSnapshot"
+      },
+      "state_before": {
+        "data": {},
+        "name": "InspectingJournal"
+      }
+    },
+    {
+      "input": "EffectResult(JournalObserved(Incomplete))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "RollbackJournal"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "RollingBack"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "provider_requires_rollback",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "RollingBack"
+      },
+      "state_before": {
+        "data": {},
+        "name": "InspectingJournal"
+      }
+    },
+    {
+      "input": "EffectResult(JournalObserved(Complete))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "CleanupJournal"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "CleaningRecoveredJournal"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "provider_requires_completed_cleanup",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "CleaningRecoveredJournal"
+      },
+      "state_before": {
+        "data": {},
+        "name": "InspectingJournal"
+      }
+    },
+    {
+      "input": "EffectResult(JournalObserved(Conflict))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReleaseRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReleasingError"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "provider_reports_recovery_conflict_or_invalid_journal",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReleasingError"
+      },
+      "state_before": {
+        "data": {},
+        "name": "InspectingJournal"
+      }
+    },
+    {
+      "input": "EffectResult(JournalInspectionError)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReleaseRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReleasingError"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "journal_inspection_error",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReleasingError"
+      },
+      "state_before": {
+        "data": {},
+        "name": "InspectingJournal"
+      }
+    },
+    {
+      "input": "EffectResult(RollbackDurable(false))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "CleanupJournal"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "CleaningRecoveredJournal"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "rollback_durable",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "CleaningRecoveredJournal"
+      },
+      "state_before": {
+        "data": {},
+        "name": "RollingBack"
+      }
+    },
+    {
+      "input": "EffectResult(RollbackDurable(true))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "RollbackJournal"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "RollingBack"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "provider_continues_rollback",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "RollingBack"
+      },
+      "state_before": {
+        "data": {},
+        "name": "RollingBack"
+      }
+    },
+    {
+      "input": "EffectResult(RollbackConflict)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReleaseRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReleasingError"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "rollback_external_edit_conflict",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReleasingError"
+      },
+      "state_before": {
+        "data": {},
+        "name": "RollingBack"
+      }
+    },
+    {
+      "input": "EffectResult(RollbackIoError)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReleaseRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReleasingError"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "rollback_requires_retry",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReleasingError"
+      },
+      "state_before": {
+        "data": {},
+        "name": "RollingBack"
+      }
+    },
+    {
+      "input": "EffectResult(JournalCleanupDurable)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReadSnapshot"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReadingSnapshot"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "recovered_journal_cleaned",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReadingSnapshot"
+      },
+      "state_before": {
+        "data": {},
+        "name": "CleaningRecoveredJournal"
+      }
+    },
+    {
+      "input": "EffectResult(JournalCleanupIoError)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReleaseRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReleasingError"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "recovered_cleanup_requires_retry",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReleasingError"
+      },
+      "state_before": {
+        "data": {},
+        "name": "CleaningRecoveredJournal"
+      }
+    },
+    {
+      "input": "EffectResult(SnapshotObserved(ReadReady))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReleaseRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReleasingSuccess"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "provider_returns_read_or_noop_result",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReleasingSuccess"
+      },
+      "state_before": {
+        "data": {},
+        "name": "ReadingSnapshot"
+      }
+    },
+    {
+      "input": "EffectResult(SnapshotObserved(MutationReady))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "PersistJournal"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "PersistingJournal"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "provider_validates_bounded_mutation",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "PersistingJournal"
+      },
+      "state_before": {
+        "data": {},
+        "name": "ReadingSnapshot"
+      }
+    },
+    {
+      "input": "EffectResult(SnapshotObserved(GitNeeded))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "InspectGit"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "InspectingGit"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "git_operation_requires_observation",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "InspectingGit"
+      },
+      "state_before": {
+        "data": {},
+        "name": "ReadingSnapshot"
+      }
+    },
+    {
+      "input": "EffectResult(SnapshotObserved(Rejected))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReleaseRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReleasingError"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "provider_rejects_request_or_expected_hash",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReleasingError"
+      },
+      "state_before": {
+        "data": {},
+        "name": "ReadingSnapshot"
+      }
+    },
+    {
+      "input": "EffectResult(SnapshotIoError)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReleaseRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReleasingError"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "snapshot_io_error",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReleasingError"
+      },
+      "state_before": {
+        "data": {},
+        "name": "ReadingSnapshot"
+      }
+    },
+    {
+      "input": "EffectResult(JournalDurable)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ApplyFilesystemPlan"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ApplyingFilesystem"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "durable_journal_allows_apply",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ApplyingFilesystem"
+      },
+      "state_before": {
+        "data": {},
+        "name": "PersistingJournal"
+      }
+    },
+    {
+      "input": "EffectResult(JournalPersistenceUncertain)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReleaseRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReleasingError"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "journal_durability_unknown_no_apply",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReleasingError"
+      },
+      "state_before": {
+        "data": {},
+        "name": "PersistingJournal"
+      }
+    },
+    {
+      "input": "EffectResult(FilesystemPlanApplied(false))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "PersistCompletion"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "PersistingCompletion"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "filesystem_plan_applied",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "PersistingCompletion"
+      },
+      "state_before": {
+        "data": {},
+        "name": "ApplyingFilesystem"
+      }
+    },
+    {
+      "input": "EffectResult(FilesystemPlanApplied(true))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ApplyFilesystemPlan"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ApplyingFilesystem"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "provider_continues_apply",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ApplyingFilesystem"
+      },
+      "state_before": {
+        "data": {},
+        "name": "ApplyingFilesystem"
+      }
+    },
+    {
+      "input": "EffectResult(FilesystemApplyInterrupted)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "InspectJournal"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "InspectingJournal"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "interrupted_apply_enters_recovery",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "InspectingJournal"
+      },
+      "state_before": {
+        "data": {},
+        "name": "ApplyingFilesystem"
+      }
+    },
+    {
+      "input": "EffectResult(CompletionDurable)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "CleanupJournal"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "CleaningCompletedJournal"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "durable_completion_allows_cleanup",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "CleaningCompletedJournal"
+      },
+      "state_before": {
+        "data": {},
+        "name": "PersistingCompletion"
+      }
+    },
+    {
+      "input": "EffectResult(CompletionPersistenceUncertain)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReleaseRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReleasingError"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "completion_durability_unknown",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReleasingError"
+      },
+      "state_before": {
+        "data": {},
+        "name": "PersistingCompletion"
+      }
+    },
+    {
+      "input": "EffectResult(JournalCleanupDurable)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReleaseRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReleasingSuccess"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "completed_journal_cleaned",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReleasingSuccess"
+      },
+      "state_before": {
+        "data": {},
+        "name": "CleaningCompletedJournal"
+      }
+    },
+    {
+      "input": "EffectResult(JournalCleanupIoError)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReleaseRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReleasingError"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "completed_cleanup_requires_retry",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReleasingError"
+      },
+      "state_before": {
+        "data": {},
+        "name": "CleaningCompletedJournal"
+      }
+    },
+    {
+      "input": "EffectResult(GitObserved(QueryReady))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReleaseRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReleasingSuccess"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "git_query_result_ready",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReleasingSuccess"
+      },
+      "state_before": {
+        "data": {},
+        "name": "InspectingGit"
+      }
+    },
+    {
+      "input": "EffectResult(GitObserved(CommitReady))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "PublishCommit"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "PublishingCommit"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "clean_index_and_expected_head_match",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "PublishingCommit"
+      },
+      "state_before": {
+        "data": {},
+        "name": "InspectingGit"
+      }
+    },
+    {
+      "input": "EffectResult(GitObserved(Rejected))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReleaseRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReleasingError"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "staged_changes_or_head_mismatch",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReleasingError"
+      },
+      "state_before": {
+        "data": {},
+        "name": "InspectingGit"
+      }
+    },
+    {
+      "input": "EffectResult(GitInspectionError)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReleaseRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReleasingError"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "git_inspection_error",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReleasingError"
+      },
+      "state_before": {
+        "data": {},
+        "name": "InspectingGit"
+      }
+    },
+    {
+      "input": "EffectResult(CommitPublished)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReleaseRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReleasingSuccess"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "fenced_commit_publication_confirmed",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReleasingSuccess"
+      },
+      "state_before": {
+        "data": {},
+        "name": "PublishingCommit"
+      }
+    },
+    {
+      "input": "EffectResult(CommitNotPublished)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReleaseRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReleasingError"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "fenced_commit_not_published",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReleasingError"
+      },
+      "state_before": {
+        "data": {},
+        "name": "PublishingCommit"
+      }
+    },
+    {
+      "input": "EffectResult(CommitPublicationUnknown)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReconcileCommit"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReconcilingCommit"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "uncertain_commit_requires_reconciliation",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReconcilingCommit"
+      },
+      "state_before": {
+        "data": {},
+        "name": "PublishingCommit"
+      }
+    },
+    {
+      "input": "EffectResult(PublicationReconciled(true))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReleaseRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReleasingSuccess"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "intended_commit_confirmed_at_target_ref",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReleasingSuccess"
+      },
+      "state_before": {
+        "data": {},
+        "name": "ReconcilingCommit"
+      }
+    },
+    {
+      "input": "EffectResult(PublicationReconciled(false))",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReleaseRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReleasingError"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "intended_commit_absent_or_conflicting_ref",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReleasingError"
+      },
+      "state_before": {
+        "data": {},
+        "name": "ReconcilingCommit"
+      }
+    },
+    {
+      "input": "EffectResult(PublicationStillUnknown)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "ReleaseRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "ReleasingError"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "publication_remains_unknown",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "ReleasingError"
+      },
+      "state_before": {
+        "data": {},
+        "name": "ReconcilingCommit"
+      }
+    },
+    {
+      "input": "EffectResult(LockReleased)",
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "Ready"
+        },
+        "rejection": null,
+        "reply": {
+          "data": {},
+          "name": "OperationResult"
+        }
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "operation_result_after_resource_release",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "Ready"
+      },
+      "state_before": {
+        "data": {},
+        "name": "ReleasingSuccess"
+      }
+    },
+    {
+      "input": "EffectResult(LockReleaseError)",
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "Ready"
+        },
+        "rejection": {
+          "data": {},
+          "name": "OperationError"
+        },
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "success_path_release_error",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "Ready"
+      },
+      "state_before": {
+        "data": {},
+        "name": "ReleasingSuccess"
+      }
+    },
+    {
+      "input": "EffectResult(LockReleased)",
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "Ready"
+        },
+        "rejection": {
+          "data": {},
+          "name": "OperationError"
+        },
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "operation_error_after_resource_release",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "Ready"
+      },
+      "state_before": {
+        "data": {},
+        "name": "ReleasingError"
+      }
+    },
+    {
+      "input": "EffectResult(LockReleaseError)",
+      "output": {
+        "commands": [],
+        "effects": [],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "Ready"
+        },
+        "rejection": {
+          "data": {},
+          "name": "OperationError"
+        },
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "operation_and_release_error",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "Ready"
+      },
+      "state_before": {
+        "data": {},
+        "name": "ReleasingError"
+      }
+    }
+  ],
+  "spec": "rms/trace-bundle/v0.1"
+}

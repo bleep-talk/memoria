@@ -1,0 +1,162 @@
+spec: rms/semantic-change/v0.1
+module: modules/batch-recovery-boundary/module.yaml
+supersedes:
+- verification/changes/record-observed-journal-and-git-publication-reconciliation-evidence-for-memoria-1947a3c05edf.yaml
+intent:
+  summary: Add bounded libFuzzer and Clippy nightly realizations for the native boundary.
+declaration: null
+laws: null
+contracts: null
+properties:
+  add: []
+  set:
+  - id: generated-request-validation
+    proves: parsed-host-policy
+    kind: fuzz
+    subject: null
+    input_space:
+      strategy: generated
+      generator: memory-request-generator
+    preconditions: []
+    operation:
+      kind: semantic-function
+      name: parse-memory-request
+    oracle:
+    - Generate raw library envelopes, CLI arguments, malformed JSON, missing fields, unknown operations, oversized values, and unexpected policy options.
+    - Parsing is total and returns a closed request or InvalidRequest; it never panics or performs IO.
+    - Reject invalid syntax before domain delegation and before repository effects.
+    - Host policy remains identical after every CLI input.
+    - Include traversal, absolute paths, embedded NUL, non-UTF8 OS arguments, duplicate fields, invalid hashes, integer overflow, and limit boundaries.
+    - Replay each saved counterexample using the same parser and oracle.
+    evidence:
+      kind: fuzz
+      path: verification/properties/request_validation
+    counterexamples:
+      path: verification/counterexamples/request_validation
+    realizations:
+    - profile: smoke
+      strategy: generated-property
+      command: fuzz
+      generator: tests/properties.rs#generate_requests
+      runner: tests/properties.rs#check_request_validation
+      exhaustive: false
+      owner_module: null
+      package: null
+      working_directory: null
+      test_selection: null
+    - profile: nightly
+      strategy: coverage-fuzzer
+      command: fuzz
+      generator: tools/fuzz_request.sh#prepare_corpus
+      runner: fuzz/fuzz_targets/request_validation.rs#fuzz_one
+      exhaustive: false
+      owner_module: null
+      package: null
+      working_directory: null
+      test_selection: null
+    explorations: []
+    observations: []
+    observability: null
+    assumptions: []
+    temporal: null
+  - id: repository-effect-safety
+    proves: confined-serialized-storage
+    kind: semantic
+    subject: null
+    input_space:
+      strategy: generated
+      generator: filesystem-topology-generator
+    preconditions:
+    - The host supplies a trusted repository anchor, fixed provider roots, and bounded policy.
+    operation:
+      kind: semantic-function
+      name: filesystem-support
+    oracle:
+    - Generate regular files, directories, symlinks at every path component, special files, missing parents, replacement races, and malformed repositories.
+    - Resolve and mutate through retained directory descriptors with no-follow checks; never validate a path and later reopen it by unchecked absolute spelling.
+    - No managed operation escapes the four fixed roots or follows a symlink.
+    - Internal lock, journal, and Git metadata are reserved control storage and cannot be addressed as managed memory paths.
+    - Reject bare repositories, linked worktrees, and submodules before requested mutation.
+    - Read paths do not accept special files or block on FIFO/device input.
+    - Init coordinates through the trusted anchor even before repository creation and journals managed-root creation.
+    - Required file and parent-directory durability steps are observable; unsupported durability or no-follow behavior fails closed.
+    - Document the limit that advisory locks do not make arbitrary hostile external writers participate in serialization.
+    evidence:
+      kind: property
+      path: verification/properties/filesystem_safety
+    counterexamples:
+      path: verification/counterexamples/filesystem_safety
+    realizations:
+    - profile: smoke
+      strategy: generated-property
+      command: fuzz
+      generator: tests/properties.rs#generate_filesystem_topologies
+      runner: tests/properties.rs#check_filesystem_safety
+      exhaustive: false
+      owner_module: null
+      package: null
+      working_directory: null
+      test_selection: null
+    - profile: nightly
+      strategy: static-analyzer
+      command: fuzz
+      generator: null
+      runner: tools/static_analysis.sh#run
+      exhaustive: false
+      owner_module: null
+      package: null
+      working_directory: null
+      test_selection: null
+    explorations: []
+    observations: []
+    observability: null
+    assumptions: []
+    temporal: null
+  remove: []
+hunt_exceptions: null
+proof_delegations: null
+trace_producers: null
+probe: null
+semantic_functions: null
+implementation_commands:
+  set:
+    fuzz: bash tools/property_runner.sh "$RMS_PROPERTY_RUNNER"
+  add: {}
+  remove: []
+machine: null
+roles:
+  set: []
+  add:
+  - kind: fuzz_target
+    effect: null
+    binding_hint: null
+    path: fuzz/fuzz_targets/request_validation.rs
+  - kind: package_manifest
+    effect: null
+    binding_hint: null
+    path: fuzz/Cargo.toml
+  - kind: build_support
+    effect: null
+    binding_hint: null
+    path: tools/property_runner.sh
+  - kind: build_support
+    effect: null
+    binding_hint: null
+    path: tools/fuzz_request.sh
+  - kind: build_support
+    effect: null
+    binding_hint: null
+    path: tools/static_analysis.sh
+  remove: []
+representation: null
+allowed_missing_constructors: null
+evidence: null
+surfaces: null
+binding_dependencies: null
+artifacts: null
+transformations: null
+authorities: null
+protocol_bindings: null
+authority_bindings: null
+public_behavior_bindings: null
+dependency_behavior_bindings: null

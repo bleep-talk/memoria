@@ -1,0 +1,3 @@
+# external-consumer-and-cli evidence
+
+`rms property run modules/batch-recovery-boundary/implementation.yaml --profile smoke` selected `external_consumer_and_cli` and the runner passed on macOS arm64. An external Cargo crate built against the source archive and completed init, write, and read. The release CLI passed the JSON init, write, read, status, diff, commit, log, and invalid-path journey. The focused property command passed after the evidence and generator updates. The complete boundary gate remains pending. This record claims only the stated checks.

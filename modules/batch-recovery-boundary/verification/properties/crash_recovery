@@ -1,0 +1,3 @@
+# crash-and-failure-schedules evidence
+
+`rms property run modules/batch-recovery-boundary/implementation.yaml --profile smoke` selected `check_crash_recovery` and the runner passed on macOS arm64. The pure schedule test checks recovery-entry branches. Native tests kill processes at three journal points and check repeated reopen and external-edit conflict. Short-write and disk-full injection remain open. The focused property command passed after the evidence and generator updates. The complete boundary gate remains pending. This record claims only the stated checks.

@@ -1,0 +1,10 @@
+from: []
+previous_revision:
+  applied_by: rms binding set-package
+  change_record: verification/binding-changes/package-1790753830461478000.yaml
+  change_record_digest: sha256:54549468d14e461375252f6bf6279cdd903e24eddf33f74aa228e4a1b941714b
+  digest: sha256:e1de7fb53645f88f86e10f018ca278c8288111d04f102ac81dab91ca6843953b
+route_receipt: 404145b44639ea1c29ef819e4c45fca413ad0fe598418480d0acee2b84c87df2
+set:
+- batch_recovery_decisions
+spec: rms/binding-public-reexports-change/v0.1

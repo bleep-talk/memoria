@@ -1,0 +1,3 @@
+# generated-request-validation evidence
+
+`rms property run modules/batch-recovery-boundary/implementation.yaml --profile smoke` selected `check_request_validation` and the runner passed on macOS arm64. The request property generated 128 valid memory names and checked traversal, absolute, and Git-internal rejection. Native tests also cover protected paths, malformed frontmatter, and stale hashes. The focused property command passed after the evidence and generator updates. The complete boundary gate remains pending. This record claims only the stated checks.

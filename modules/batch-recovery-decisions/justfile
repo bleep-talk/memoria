@@ -1,0 +1,21 @@
+set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
+
+toolchain := if os() == "macos" { "stable-aarch64-apple-darwin" } else { "stable" }
+
+build:
+    cargo +{{toolchain}} build --manifest-path Cargo.toml
+
+verify:
+    cargo +{{toolchain}} test --manifest-path Cargo.toml
+
+properties selector:
+    cargo +{{toolchain}} test --manifest-path Cargo.toml {{quote(selector)}} -- --exact --nocapture
+
+trace selector:
+    cargo +{{toolchain}} test --manifest-path Cargo.toml {{quote(selector)}} -- --exact --nocapture
+
+probe selector:
+    cargo +{{toolchain}} test --manifest-path Cargo.toml {{quote(selector)}} -- --exact --nocapture
+
+format:
+    cargo +{{toolchain}} fmt --manifest-path Cargo.toml -- --check

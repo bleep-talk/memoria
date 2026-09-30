@@ -1,0 +1,25 @@
+toolchain := if os() == "macos" { "stable-aarch64-apple-darwin" } else { "stable" }
+
+memoria-build:
+    cargo +{{toolchain}} build --all-targets
+
+memoria-verify:
+    cargo +{{toolchain}} test --all-targets
+
+memoria-format-check:
+    cargo +{{toolchain}} fmt --all -- --check
+
+memoria-probe runner:
+    rms_runner='{{runner}}'; cargo +{{toolchain}} test --test machine_probe "${rms_runner##*#}" -- --nocapture
+
+memoria-trace runner:
+    rms_runner='{{runner}}'; cargo +{{toolchain}} test --test trace_producer "${rms_runner##*#}" -- --nocapture
+
+memoria-property runner:
+    rms_runner='{{runner}}'; cargo +{{toolchain}} test --test properties "${rms_runner##*#}" -- --nocapture
+
+memoria-integration package selection:
+    cargo +{{toolchain}} test --package {{package}} {{selection}} -- --nocapture
+
+memoria-cli-smoke:
+    cargo +{{toolchain}} run --manifest-path cli/Cargo.toml -- --help

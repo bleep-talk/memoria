@@ -1,0 +1,1538 @@
+spec: rms/implementation/v0.2
+module: batch-recovery-boundary
+binding: rust
+source:
+  root: .
+  public_entrypoint: src/lib.rs
+commands:
+  build: just memoria-build
+  verify: just memoria-verify
+  probe: just memoria-probe "$RMS_PROBE_RUNNER"
+  trace: just memoria-trace "$RMS_TRACE_RUNNER"
+  fuzz: bash tools/property_runner.sh "$RMS_PROPERTY_RUNNER"
+  format: just memoria-format-check
+  smoke: just memoria-cli-smoke
+  integration: just memoria-integration "$RMS_INTEGRATION_PACKAGE" "$RMS_INTEGRATION_TEST_SELECTION"
+toolchain:
+  cargo_manifest: Cargo.toml
+  package: memoria-memory
+dependencies:
+  allowed_external_crates:
+  - batch-recovery-decisions
+  - clap
+  - fs2
+  - git2
+  - libfuzzer_sys
+  - rustix
+  - serde
+  - serde_json
+  - tempfile
+  - uuid
+  local_modules:
+  - batch-recovery-decisions
+  external_crates:
+  - crate: clap
+    package: clap
+    version_requirement: '4'
+  - crate: fs2
+    package: fs2
+    version_requirement: '0.4'
+  - crate: git2
+    package: git2
+    version_requirement: '0.20'
+  - crate: libfuzzer_sys
+    package: libfuzzer-sys
+    version_requirement: '0.4'
+  - crate: rustix
+    package: rustix
+    version_requirement: '1'
+  - crate: serde
+    package: serde
+    version_requirement: '1'
+  - crate: serde_json
+    package: serde_json
+    version_requirement: '1'
+  - crate: tempfile
+    package: tempfile
+    version_requirement: '3'
+  - crate: uuid
+    package: uuid
+    version_requirement: '1'
+architecture:
+  shape: boundary-adapter
+  public_modules: []
+  allowed_public_field_structs:
+  - BatchRecoveryBoundaryCommandEnvelope
+  - BatchRecoveryBoundaryEventEnvelope
+  - BatchRecoveryBoundaryTransition
+  - BatchRecoveryBoundaryTransitionRecord
+  - BatchRecoveryBoundarySourceProvenance
+  - BatchRecoveryBoundaryEffectEnvelope
+  - BatchRecoveryBoundaryEffectResultEnvelope
+  messages:
+    command_envelope:
+    - command_id
+    - target_machine
+    - correlation_id
+    - causation_id
+    - idempotency_key
+    event_envelope:
+    - event_id
+    - source_machine
+    - correlation_id
+    - causation_id
+    - sequence
+    - schema_version
+    - occurred_at
+    effect_envelope:
+    - effect_id
+    - requester
+    - correlation_id
+    - causation_id
+    - idempotency_key
+    effect_result_envelope:
+    - effect_id
+    - requester
+    - correlation_id
+    - causation_id
+    - status
+  transition:
+    output:
+    - next_state
+    - events
+    - commands
+    - effects
+    - reply
+    - rejection
+  numeric_safety:
+    validated_arithmetic: checked-or-bounded-or-proven
+  trace:
+    journal: transition-records
+    timeline_projection: transition-records
+    replay_bundle: transition-records
+    first_bad_transition: source-provenance-from-transition-record
+    producers:
+    - id: memoria-operation-traces
+      profile: smoke
+      bundle: verification/traces/memoria_operations.yaml
+      command: trace
+      runner: tests/trace_producer.rs#produce_operation_traces
+    - id: memoria-publication-traces
+      profile: smoke
+      bundle: verification/traces/memoria_publication.yaml
+      command: trace
+      runner: tests/trace_producer.rs#produce_publication_traces
+    - id: memoria-recovery-traces
+      profile: smoke
+      bundle: verification/traces/memoria_recovery.yaml
+      command: trace
+      runner: tests/trace_producer.rs#produce_recovery_traces
+  reliability:
+    fuzz_targets:
+    - id: generated-request-validation
+      proves: parsed-host-policy
+      kind: fuzz
+      input_space:
+        strategy: generated
+        generator: memory-request-generator
+      operation:
+        kind: semantic-function
+        name: parse-memory-request
+      oracle:
+      - Generate raw library envelopes, CLI arguments, malformed JSON, missing fields, unknown operations, oversized values, and unexpected policy options.
+      - Parsing is total and returns a closed request or InvalidRequest; it never panics or performs IO.
+      - Reject invalid syntax before domain delegation and before repository effects.
+      - Host policy remains identical after every CLI input.
+      - Include traversal, absolute paths, embedded NUL, non-UTF8 OS arguments, duplicate fields, invalid hashes, integer overflow, and limit boundaries.
+      - Replay each saved counterexample using the same parser and oracle.
+      evidence:
+        path: verification/properties/request_validation
+      counterexamples:
+        path: verification/counterexamples/request_validation
+      realizations:
+      - profile: smoke
+        strategy: generated-property
+        command: fuzz
+        generator: tests/properties.rs#generate_requests
+        runner: tests/properties.rs#check_request_validation
+      - profile: nightly
+        strategy: coverage-fuzzer
+        command: fuzz
+        generator: fuzz/fuzz_targets/request_validation.rs#generate_request
+        runner: fuzz/fuzz_targets/request_validation.rs#fuzz_one
+    properties:
+    - id: phase-protocol
+      proves: canonical-effect-order
+      kind: semantic
+      input_space:
+        strategy: generated
+        generator: memory-phase-schedule-generator
+      operation:
+        kind: semantic-function
+        name: transition-model
+      oracle:
+      - Generate valid, illegal, stale, duplicate, delayed, and mismatched-correlation inputs across every declared state.
+      - Every legal input selects exactly one case; every other state/input pair returns IllegalTransition with unchanged state and empty effect output.
+      - Discriminate same-state same-input cases using typed observations and provider decisions, never executor-owned business branches.
+      - Record state before, input, complete output, state after, and source provenance for every transition.
+      - The driver retains every complete record, advances from state_after, executes only output.effects, and feeds each correlated result into the pure transition.
+      - A rejected unrelated input cannot discard an in-flight request or release its resources.
+      - LockReleaseError is emitted only after the executor closes the owned lock descriptor; an earlier unlock failure cannot falsely report an unheld resource.
+      - Recovery after interrupted apply retains the original failure; after recovery the request returns an error and is not silently retried or converted into success.
+      - No finite operation path returns with an owned lock; process death releases its OS lock without marking its journal complete.
+      evidence:
+        path: verification/properties/phase_protocol
+      counterexamples:
+        path: verification/counterexamples/phase_protocol
+      realizations:
+      - profile: smoke
+        strategy: generated-property
+        command: fuzz
+        generator: tests/properties.rs#generate_phase_schedules
+        runner: tests/properties.rs#check_phase_protocol
+    - id: provider-decision-routing
+      proves: canonical-effect-order
+      kind: semantic
+      input_space:
+        strategy: generated
+        generator: provider-observation-generator
+      preconditions:
+      - The provider has applied product semantics and the required contract is synced byte-for-byte.
+      operation:
+        kind: semantic-function
+        name: transition-model
+      oracle:
+      - Every product validation, expected-hash comparison, context/tree rendering, and recovery decision is obtained from the exact bound capability.
+      - Compare provider results and boundary transition outputs for generated observations and requests.
+      - The provider receives immutable typed observations and performs no filesystem or Git IO.
+      - The boundary cannot accept a request rejected by the provider or invent conventional root names.
+      evidence:
+        path: verification/properties/provider_routing
+      counterexamples:
+        path: verification/counterexamples/provider_routing
+      realizations:
+      - profile: smoke
+        strategy: generated-property
+        command: fuzz
+        generator: tests/properties.rs#generate_provider_observations
+        runner: tests/properties.rs#check_provider_routing
+    - id: commit-publication-schedules
+      proves: fenced-git-publication
+      kind: semantic
+      input_space:
+        strategy: generated
+        generator: git-publication-schedule-generator
+      operation:
+        kind: semantic-function
+        name: transition-model
+      oracle:
+      - Generate born and unborn HEAD, staged changes, clean index, expected-HEAD mismatch, reference replacement, and publication failures.
+      - Write, delete, apply, init, and open never publish commits.
+      - Status, diff, and log are read operations and do not stage, checkout, or publish.
+      - Commit rejects pre-existing staged changes before preparing its own publication.
+      - Prepare commit content without modifying the caller's index and limit committed changes to provider-approved managed content.
+      - Conditional reference publication checks both the intended reference identity and expected old HEAD at publication time.
+      - Retain expected HEAD, target reference, intended commit identity, and enough bounded durable reconciliation data to reopen after uncertain publication.
+      - Reconcile an unknown update by observing the target reference; intended commit means published, expected old value means not published, and another value means PublicationConflict.
+      - An unreadable publication state returns PublicationUnknown and never retries a blind reference update.
+      - Inject crash and IO failure around object durability, reference update, publication observation, and reconciliation cleanup.
+      - No code path invokes hooks, checkout, network transport, or a Git subprocess.
+      evidence:
+        path: verification/properties/git_publication
+      counterexamples:
+        path: verification/counterexamples/git_publication
+      realizations:
+      - profile: smoke
+        strategy: generated-property
+        command: fuzz
+        generator: tests/properties.rs#generate_git_schedules
+        runner: tests/properties.rs#check_git_publication
+    - id: public-operation-routing
+      proves: reusable-native-facade
+      kind: semantic
+      input_space:
+        strategy: generated
+        generator: native-operation-generator
+      preconditions:
+      - The provider contract defines the fixed roots and exact operation values.
+      operation:
+        kind: semantic-function
+        name: transition-model
+      oracle:
+      - Exercise all fifteen public operations with valid, invalid, missing, conflicting, and bounded-limit inputs.
+      - Each facade method produces the corresponding closed machine command and reaches the same driver.
+      - Open and every subsequent operation inspect recovery state while holding the same repository lock.
+      - Read-only operations can perform required recovery but cannot perform an unrelated requested mutation.
+      - Exists distinguishes absence from unsafe paths and IO failures.
+      - List, metadata, context, and tree use the provider's ordering, limits, and rendering decisions.
+      - Status, diff, and log return typed local Git observations; commit remains separate.
+      - Invalid input has an empty effect frame; operational errors expose any pending recovery state.
+      evidence:
+        path: verification/properties/public_operations
+      counterexamples:
+        path: verification/counterexamples/public_operations
+      realizations:
+      - profile: smoke
+        strategy: generated-property
+        command: fuzz
+        generator: tests/properties.rs#generate_native_operations
+        runner: tests/properties.rs#check_public_operations
+    - id: crash-and-failure-schedules
+      proves: bounded-durable-recovery
+      kind: semantic
+      input_space:
+        strategy: generated
+        generator: journal-crash-schedule-generator
+      preconditions:
+      - The provider recovery contract has product semantics.
+      operation:
+        kind: semantic-function
+        name: transition-model
+      oracle:
+      - Generate batches, absent/present expected hashes, duplicate paths, ancestor collisions, deletion cases, empty batches, and all host-limit boundaries.
+      - Validate the whole batch against the locked snapshot before persisting its journal.
+      - Journal schema version 1 records repository identity, transaction identity, bounded entries, before/after hashes, recovery data, and completion state.
+      - Bound decoding, allocation, entry count, backup bytes, and total encoded bytes with checked arithmetic.
+      - Inject short writes, interruption, disk-full errors, failed flushes, rename failures, cleanup failures, and crashes before and after each durable step.
+      - A partial journal that has not enabled apply cannot authorize rollback of arbitrary paths.
+      - An incomplete journal restores the pre-apply state when observed files match permitted before/after states.
+      - Recovery rechecks each destination before mutation and preserves unexpected content with RecoveryConflict.
+      - Repeated crashes during rollback or cleanup remain recoverable and do not erase conflict evidence.
+      - A complete durable journal is cleaned without rolling back its committed filesystem state.
+      - No apply effect precedes JournalDurable and no successful mutation reply precedes CompletionDurable.
+      - A failed apply is never automatically replayed as a new user request.
+      - Errors retain the original operation failure and report pending recovery or cleanup when applicable.
+      evidence:
+        path: verification/properties/crash_recovery
+      counterexamples:
+        path: verification/counterexamples/crash_recovery
+      realizations:
+      - profile: smoke
+        strategy: generated-property
+        command: fuzz
+        generator: tests/properties.rs#generate_crash_schedules
+        runner: tests/properties.rs#check_crash_recovery
+      - profile: ci
+        strategy: integration-test
+        command: integration
+        runner: modules/batch-recovery-boundary/tests/concurrency.rs#crash_restart_recovers
+        owner_module: batch-recovery-boundary
+        package: memoria-memory
+        working_directory: modules/batch-recovery-boundary
+        test_selection: crash_restart_recovers
+    - id: real-process-serialization
+      proves: confined-serialized-storage
+      kind: semantic
+      input_space:
+        strategy: generated
+        generator: two-process-operation-schedules
+      preconditions:
+      - Two independent OS processes use the same repository and host policy.
+      operation:
+        kind: semantic-function
+        name: memory-repo-facade
+      oracle:
+      - Spawn two real processes; thread-only tests do not satisfy this property.
+      - Use barriers to overlap lock acquisition, expected-hash validation, apply, recovery, and commit.
+      - Two writes with the same expected hash cannot both report successful conflicting updates.
+      - A read cannot observe a cooperating writer's partially applied batch.
+      - Killing a lock owner releases the OS lock and the next process recovers its incomplete journal before continuing.
+      - Distinct path spellings for the same supported repository resolve to the same lock identity.
+      - An external noncooperating edit is preserved and reported as RecoveryConflict when recovery encounters it.
+      - Record the selected test count and child exit results.
+      evidence:
+        path: verification/properties/process_concurrency
+      counterexamples:
+        path: verification/counterexamples/process_concurrency
+      realizations:
+      - profile: ci
+        strategy: integration-test
+        command: integration
+        runner: modules/batch-recovery-boundary/tests/concurrency.rs#two_process_repository_serialization
+        owner_module: batch-recovery-boundary
+        package: memoria-memory
+        working_directory: modules/batch-recovery-boundary
+        test_selection: two_process_repository_serialization
+    - id: external-consumer-and-cli
+      proves: reusable-native-facade
+      kind: semantic
+      input_space:
+        strategy: generated
+        generator: package-and-cli-request-cases
+      operation:
+        kind: semantic-function
+        name: memory-repo-facade
+      oracle:
+      - Create an independent temporary Cargo consumer outside the library workspace and import the public memoria-memory package.
+      - Compile and exercise MemoryRepo through src/lib.rs exports without private source imports or CLI dependencies.
+      - Build the separate nested CLI crate and verify that its binary is named memoria.
+      - Run CLI cases for all operations and compare results with direct library calls.
+      - Every CLI response uses schema_version 1 and a stable accepted, invalid-request, or operation-error envelope.
+      - Errors expose stable codes and typed details; error messages are not parsed as the protocol.
+      - JSON stdout contains exactly one response; diagnostic stderr does not contaminate it.
+      - Invalid UTF8 arguments, malformed JSON, broken output pipes, unknown commands, and oversized input receive defined nonpanic handling.
+      - No CLI option overrides host policy or enables checkout, hooks, networking, bare repositories, worktrees, or submodules.
+      - Project just recipes invoke native Rust commands and selector recipes select at least one exact test rather than silently running zero tests.
+      evidence:
+        path: verification/properties/external_consumer
+      counterexamples:
+        path: verification/counterexamples/external_consumer
+      realizations:
+      - profile: ci
+        strategy: integration-test
+        command: integration
+        runner: modules/batch-recovery-boundary/tests/package_consumer.rs#external_consumer_and_cli
+        owner_module: batch-recovery-boundary
+        package: memoria-memory
+        working_directory: modules/batch-recovery-boundary
+        test_selection: external_consumer_and_cli
+    - id: repository-effect-safety
+      proves: confined-serialized-storage
+      kind: semantic
+      input_space:
+        strategy: generated
+        generator: filesystem-topology-generator
+      preconditions:
+      - The host supplies a trusted repository anchor, fixed provider roots, and bounded policy.
+      operation:
+        kind: semantic-function
+        name: filesystem-support
+      oracle:
+      - Generate regular files, directories, symlinks at every path component, special files, missing parents, replacement races, and malformed repositories.
+      - Resolve and mutate through retained directory descriptors with no-follow checks; never validate a path and later reopen it by unchecked absolute spelling.
+      - No managed operation escapes the four fixed roots or follows a symlink.
+      - Internal lock, journal, and Git metadata are reserved control storage and cannot be addressed as managed memory paths.
+      - Reject bare repositories, linked worktrees, and submodules before requested mutation.
+      - Read paths do not accept special files or block on FIFO/device input.
+      - Init coordinates through the trusted anchor even before repository creation and journals managed-root creation.
+      - Required file and parent-directory durability steps are observable; unsupported durability or no-follow behavior fails closed.
+      - Document the limit that advisory locks do not make arbitrary hostile external writers participate in serialization.
+      evidence:
+        path: verification/properties/filesystem_safety
+      counterexamples:
+        path: verification/counterexamples/filesystem_safety
+      realizations:
+      - profile: smoke
+        strategy: generated-property
+        command: fuzz
+        generator: tests/properties.rs#generate_filesystem_topologies
+        runner: tests/properties.rs#check_filesystem_safety
+      - profile: nightly
+        strategy: static-analyzer
+        command: fuzz
+        runner: tools/static_analysis.sh#run
+  probe:
+    protocol: rms/machine-probe/v0.2
+    command: probe
+    runner: tests/machine_probe.rs#probe_machine
+    initial_state_function: src/representation.rs#initial_state
+    mappers: []
+  machine:
+    name: BatchRecoveryBoundaryMachine
+    mode: boundary-machine
+    transition_signature: state-and-input
+    initial_state: Ready
+    transition_record_function: src/transition.rs#transition_record
+    types:
+      state: BatchRecoveryBoundaryState
+      input: BatchRecoveryBoundaryInput
+      command: BatchRecoveryBoundaryCommand
+      command_envelope: BatchRecoveryBoundaryCommandEnvelope
+      event: BatchRecoveryBoundaryEvent
+      event_envelope: BatchRecoveryBoundaryEventEnvelope
+      reply: BatchRecoveryBoundaryReply
+      rejection: BatchRecoveryBoundaryRejection
+      transition: BatchRecoveryBoundaryTransition
+      transition_record: BatchRecoveryBoundaryTransitionRecord
+      effect: BatchRecoveryBoundaryEffect
+      effect_envelope: BatchRecoveryBoundaryEffectEnvelope
+      effect_result: BatchRecoveryBoundaryEffectResult
+      effect_result_envelope: BatchRecoveryBoundaryEffectResultEnvelope
+    states:
+    - Ready
+    - AcquiringLock
+    - InspectingRepository
+    - InspectingJournal
+    - RollingBack
+    - CleaningRecoveredJournal
+    - ReadingSnapshot
+    - PersistingJournal
+    - ApplyingFilesystem
+    - PersistingCompletion
+    - CleaningCompletedJournal
+    - InspectingGit
+    - PublishingCommit
+    - ReconcilingCommit
+    - ReleasingSuccess
+    - ReleasingError
+    commands:
+    - Init
+    - Open
+    - Read
+    - Write
+    - Delete
+    - Exists
+    - List
+    - ReadMetadata
+    - Apply
+    - BuildContext
+    - Tree
+    - Status
+    - Diff
+    - Commit
+    - Log
+    - InvalidRequestInput
+    observed_events: []
+    events: []
+    effects:
+    - AcquireRepoLock
+    - InspectRepository
+    - InspectJournal
+    - RollbackJournal
+    - CleanupJournal
+    - ReadSnapshot
+    - PersistJournal
+    - ApplyFilesystemPlan
+    - PersistCompletion
+    - InspectGit
+    - PublishCommit
+    - ReconcileCommit
+    - ReleaseRepoLock
+    effect_results:
+    - LockAcquired
+    - LockUnavailable
+    - RepositoryObserved
+    - RepositoryInspectionError
+    - JournalObserved
+    - JournalInspectionError
+    - RollbackDurable
+    - RollbackConflict
+    - RollbackIoError
+    - JournalCleanupDurable
+    - JournalCleanupIoError
+    - SnapshotObserved
+    - SnapshotIoError
+    - JournalDurable
+    - JournalPersistenceUncertain
+    - FilesystemPlanApplied
+    - FilesystemApplyInterrupted
+    - CompletionDurable
+    - CompletionPersistenceUncertain
+    - GitObserved
+    - GitInspectionError
+    - CommitPublished
+    - CommitNotPublished
+    - CommitPublicationUnknown
+    - PublicationReconciled
+    - PublicationStillUnknown
+    - LockReleased
+    - LockReleaseError
+    replies:
+    - OperationResult
+    rejections:
+    - InvalidRequest
+    - OperationError
+    - IllegalTransition
+    effect_protocols:
+    - effect: AcquireRepoLock
+      results:
+      - LockAcquired
+      - LockUnavailable
+      executor_role: effect_executor
+      executor_symbol: src/effects/acquire_lock.rs#execute
+      atomicity: one-request-one-result
+    - effect: InspectRepository
+      results:
+      - RepositoryObserved
+      - RepositoryInspectionError
+      executor_role: effect_executor
+      executor_symbol: src/effects/inspect_repository.rs#execute
+      atomicity: one-request-one-result
+    - effect: InspectJournal
+      results:
+      - JournalObserved
+      - JournalInspectionError
+      executor_role: effect_executor
+      executor_symbol: src/effects/inspect_journal.rs#execute
+      atomicity: one-request-one-result
+    - effect: RollbackJournal
+      results:
+      - RollbackDurable
+      - RollbackConflict
+      - RollbackIoError
+      executor_role: effect_executor
+      executor_symbol: src/effects/rollback_journal.rs#execute
+      atomicity: one-request-one-result
+    - effect: CleanupJournal
+      results:
+      - JournalCleanupDurable
+      - JournalCleanupIoError
+      executor_role: effect_executor
+      executor_symbol: src/effects/cleanup_journal.rs#execute
+      atomicity: one-request-one-result
+    - effect: ReadSnapshot
+      results:
+      - SnapshotObserved
+      - SnapshotIoError
+      executor_role: effect_executor
+      executor_symbol: src/effects/read_snapshot.rs#execute
+      atomicity: one-request-one-result
+    - effect: PersistJournal
+      results:
+      - JournalDurable
+      - JournalPersistenceUncertain
+      executor_role: effect_executor
+      executor_symbol: src/effects/persist_journal.rs#execute
+      atomicity: one-request-one-result
+    - effect: ApplyFilesystemPlan
+      results:
+      - FilesystemPlanApplied
+      - FilesystemApplyInterrupted
+      executor_role: effect_executor
+      executor_symbol: src/effects/apply_filesystem.rs#execute
+      atomicity: one-request-one-result
+    - effect: PersistCompletion
+      results:
+      - CompletionDurable
+      - CompletionPersistenceUncertain
+      executor_role: effect_executor
+      executor_symbol: src/effects/persist_completion.rs#execute
+      atomicity: one-request-one-result
+    - effect: InspectGit
+      results:
+      - GitObserved
+      - GitInspectionError
+      executor_role: effect_executor
+      executor_symbol: src/effects/inspect_git.rs#execute
+      atomicity: one-request-one-result
+    - effect: PublishCommit
+      results:
+      - CommitPublished
+      - CommitNotPublished
+      - CommitPublicationUnknown
+      executor_role: effect_executor
+      executor_symbol: src/effects/publish_commit.rs#execute
+      atomicity: one-request-one-result
+    - effect: ReconcileCommit
+      results:
+      - PublicationReconciled
+      - PublicationStillUnknown
+      executor_role: effect_executor
+      executor_symbol: src/effects/reconcile_commit.rs#execute
+      atomicity: one-request-one-result
+    - effect: ReleaseRepoLock
+      results:
+      - LockReleased
+      - LockReleaseError
+      executor_role: effect_executor
+      executor_symbol: src/effects/release_lock.rs#execute
+      atomicity: one-request-one-result
+    resource_protocols:
+    - resource: RepoLock
+      ownership: exclusive
+      states:
+      - Unheld
+      - Held
+      initial_state: Unheld
+      terminal_states:
+      - Unheld
+      transitions:
+      - from: Unheld
+        on: LockAcquired
+        trigger_kind: effect-result
+        operation: acquire
+        to: Held
+      - from: Held
+        on: LockReleased
+        trigger_kind: effect-result
+        operation: release
+        to: Unheld
+      - from: Held
+        on: LockReleaseError
+        trigger_kind: effect-result
+        operation: release
+        to: Unheld
+    transition_function: transition
+    transitions:
+    - from: Ready
+      on: Init
+      to: AcquiringLock
+      case: begin_init
+      effects:
+      - AcquireRepoLock
+      no_reply_justification: Repository lock result is pending.
+    - from: Ready
+      on: Open
+      to: AcquiringLock
+      case: begin_open
+      effects:
+      - AcquireRepoLock
+      no_reply_justification: Repository lock result is pending.
+    - from: Ready
+      on: Read
+      to: AcquiringLock
+      case: begin_read
+      effects:
+      - AcquireRepoLock
+      no_reply_justification: Repository lock result is pending.
+    - from: Ready
+      on: Write
+      to: AcquiringLock
+      case: begin_write
+      effects:
+      - AcquireRepoLock
+      no_reply_justification: Repository lock result is pending.
+    - from: Ready
+      on: Delete
+      to: AcquiringLock
+      case: begin_delete
+      effects:
+      - AcquireRepoLock
+      no_reply_justification: Repository lock result is pending.
+    - from: Ready
+      on: Exists
+      to: AcquiringLock
+      case: begin_exists
+      effects:
+      - AcquireRepoLock
+      no_reply_justification: Repository lock result is pending.
+    - from: Ready
+      on: List
+      to: AcquiringLock
+      case: begin_list
+      effects:
+      - AcquireRepoLock
+      no_reply_justification: Repository lock result is pending.
+    - from: Ready
+      on: ReadMetadata
+      to: AcquiringLock
+      case: begin_read_metadata
+      effects:
+      - AcquireRepoLock
+      no_reply_justification: Repository lock result is pending.
+    - from: Ready
+      on: Apply
+      to: AcquiringLock
+      case: begin_apply
+      effects:
+      - AcquireRepoLock
+      no_reply_justification: Repository lock result is pending.
+    - from: Ready
+      on: BuildContext
+      to: AcquiringLock
+      case: begin_build_context
+      effects:
+      - AcquireRepoLock
+      no_reply_justification: Repository lock result is pending.
+    - from: Ready
+      on: Tree
+      to: AcquiringLock
+      case: begin_tree
+      effects:
+      - AcquireRepoLock
+      no_reply_justification: Repository lock result is pending.
+    - from: Ready
+      on: Status
+      to: AcquiringLock
+      case: begin_status
+      effects:
+      - AcquireRepoLock
+      no_reply_justification: Repository lock result is pending.
+    - from: Ready
+      on: Diff
+      to: AcquiringLock
+      case: begin_diff
+      effects:
+      - AcquireRepoLock
+      no_reply_justification: Repository lock result is pending.
+    - from: Ready
+      on: Commit
+      to: AcquiringLock
+      case: begin_commit
+      effects:
+      - AcquireRepoLock
+      no_reply_justification: Repository lock result is pending.
+    - from: Ready
+      on: Log
+      to: AcquiringLock
+      case: begin_log
+      effects:
+      - AcquireRepoLock
+      no_reply_justification: Repository lock result is pending.
+    - from: Ready
+      on: InvalidRequestInput
+      to: Ready
+      case: invalid_request_without_effects
+      rejection: InvalidRequest
+    - from: AcquiringLock
+      on: LockAcquired
+      to: InspectingRepository
+      case: lock_acquired
+      effects:
+      - InspectRepository
+    - from: AcquiringLock
+      on: LockUnavailable
+      to: Ready
+      case: lock_unavailable
+      rejection: OperationError
+    - from: InspectingRepository
+      on: RepositoryObserved
+      to: InspectingJournal
+      case: supported_repository_observed
+      effects:
+      - InspectJournal
+    - from: InspectingRepository
+      on: RepositoryObserved
+      to: ReleasingError
+      case: unsupported_repository_observed
+      effects:
+      - ReleaseRepoLock
+    - from: InspectingRepository
+      on: RepositoryInspectionError
+      to: ReleasingError
+      case: repository_inspection_error
+      effects:
+      - ReleaseRepoLock
+    - from: InspectingJournal
+      on: JournalObserved
+      to: ReadingSnapshot
+      case: provider_reports_no_recovery
+      effects:
+      - ReadSnapshot
+    - from: InspectingJournal
+      on: JournalObserved
+      to: RollingBack
+      case: provider_requires_rollback
+      effects:
+      - RollbackJournal
+    - from: InspectingJournal
+      on: JournalObserved
+      to: CleaningRecoveredJournal
+      case: provider_requires_completed_cleanup
+      effects:
+      - CleanupJournal
+    - from: InspectingJournal
+      on: JournalObserved
+      to: ReleasingError
+      case: provider_reports_recovery_conflict_or_invalid_journal
+      effects:
+      - ReleaseRepoLock
+    - from: InspectingJournal
+      on: JournalInspectionError
+      to: ReleasingError
+      case: journal_inspection_error
+      effects:
+      - ReleaseRepoLock
+    - from: RollingBack
+      on: RollbackDurable
+      to: CleaningRecoveredJournal
+      case: rollback_durable
+      effects:
+      - CleanupJournal
+    - from: RollingBack
+      on: RollbackConflict
+      to: ReleasingError
+      case: rollback_external_edit_conflict
+      effects:
+      - ReleaseRepoLock
+    - from: RollingBack
+      on: RollbackIoError
+      to: ReleasingError
+      case: rollback_requires_retry
+      effects:
+      - ReleaseRepoLock
+    - from: CleaningRecoveredJournal
+      on: JournalCleanupDurable
+      to: ReadingSnapshot
+      case: recovered_journal_cleaned
+      effects:
+      - ReadSnapshot
+    - from: CleaningRecoveredJournal
+      on: JournalCleanupIoError
+      to: ReleasingError
+      case: recovered_cleanup_requires_retry
+      effects:
+      - ReleaseRepoLock
+    - from: ReadingSnapshot
+      on: SnapshotObserved
+      to: ReleasingSuccess
+      case: provider_returns_read_or_noop_result
+      effects:
+      - ReleaseRepoLock
+    - from: ReadingSnapshot
+      on: SnapshotObserved
+      to: PersistingJournal
+      case: provider_validates_bounded_mutation
+      effects:
+      - PersistJournal
+    - from: ReadingSnapshot
+      on: SnapshotObserved
+      to: InspectingGit
+      case: git_operation_requires_observation
+      effects:
+      - InspectGit
+    - from: ReadingSnapshot
+      on: SnapshotObserved
+      to: ReleasingError
+      case: provider_rejects_request_or_expected_hash
+      effects:
+      - ReleaseRepoLock
+    - from: ReadingSnapshot
+      on: SnapshotIoError
+      to: ReleasingError
+      case: snapshot_io_error
+      effects:
+      - ReleaseRepoLock
+    - from: PersistingJournal
+      on: JournalDurable
+      to: ApplyingFilesystem
+      case: durable_journal_allows_apply
+      effects:
+      - ApplyFilesystemPlan
+    - from: PersistingJournal
+      on: JournalPersistenceUncertain
+      to: ReleasingError
+      case: journal_durability_unknown_no_apply
+      effects:
+      - ReleaseRepoLock
+    - from: ApplyingFilesystem
+      on: FilesystemPlanApplied
+      to: PersistingCompletion
+      case: filesystem_plan_applied
+      effects:
+      - PersistCompletion
+    - from: ApplyingFilesystem
+      on: FilesystemApplyInterrupted
+      to: InspectingJournal
+      case: interrupted_apply_enters_recovery
+      effects:
+      - InspectJournal
+    - from: PersistingCompletion
+      on: CompletionDurable
+      to: CleaningCompletedJournal
+      case: durable_completion_allows_cleanup
+      effects:
+      - CleanupJournal
+    - from: PersistingCompletion
+      on: CompletionPersistenceUncertain
+      to: ReleasingError
+      case: completion_durability_unknown
+      effects:
+      - ReleaseRepoLock
+    - from: CleaningCompletedJournal
+      on: JournalCleanupDurable
+      to: ReleasingSuccess
+      case: completed_journal_cleaned
+      effects:
+      - ReleaseRepoLock
+    - from: CleaningCompletedJournal
+      on: JournalCleanupIoError
+      to: ReleasingError
+      case: completed_cleanup_requires_retry
+      effects:
+      - ReleaseRepoLock
+    - from: InspectingGit
+      on: GitObserved
+      to: ReleasingSuccess
+      case: git_query_result_ready
+      effects:
+      - ReleaseRepoLock
+    - from: InspectingGit
+      on: GitObserved
+      to: PublishingCommit
+      case: clean_index_and_expected_head_match
+      effects:
+      - PublishCommit
+    - from: InspectingGit
+      on: GitObserved
+      to: ReleasingError
+      case: staged_changes_or_head_mismatch
+      effects:
+      - ReleaseRepoLock
+    - from: InspectingGit
+      on: GitInspectionError
+      to: ReleasingError
+      case: git_inspection_error
+      effects:
+      - ReleaseRepoLock
+    - from: PublishingCommit
+      on: CommitPublished
+      to: ReleasingSuccess
+      case: fenced_commit_publication_confirmed
+      effects:
+      - ReleaseRepoLock
+    - from: PublishingCommit
+      on: CommitNotPublished
+      to: ReleasingError
+      case: fenced_commit_not_published
+      effects:
+      - ReleaseRepoLock
+    - from: PublishingCommit
+      on: CommitPublicationUnknown
+      to: ReconcilingCommit
+      case: uncertain_commit_requires_reconciliation
+      effects:
+      - ReconcileCommit
+    - from: ReconcilingCommit
+      on: PublicationReconciled
+      to: ReleasingSuccess
+      case: intended_commit_confirmed_at_target_ref
+      effects:
+      - ReleaseRepoLock
+    - from: ReconcilingCommit
+      on: PublicationReconciled
+      to: ReleasingError
+      case: intended_commit_absent_or_conflicting_ref
+      effects:
+      - ReleaseRepoLock
+    - from: ReconcilingCommit
+      on: PublicationStillUnknown
+      to: ReleasingError
+      case: publication_remains_unknown
+      effects:
+      - ReleaseRepoLock
+    - from: ReleasingSuccess
+      on: LockReleased
+      to: Ready
+      case: operation_result_after_resource_release
+      reply: OperationResult
+    - from: ReleasingSuccess
+      on: LockReleaseError
+      to: Ready
+      case: success_path_release_error
+      rejection: OperationError
+    - from: ReleasingError
+      on: LockReleased
+      to: Ready
+      case: operation_error_after_resource_release
+      rejection: OperationError
+    - from: ReleasingError
+      on: LockReleaseError
+      to: Ready
+      case: operation_and_release_error
+      rejection: OperationError
+    - from: ApplyingFilesystem
+      on: FilesystemPlanApplied
+      to: ApplyingFilesystem
+      case: provider_continues_apply
+      effects:
+      - ApplyFilesystemPlan
+    - from: RollingBack
+      on: RollbackDurable
+      to: RollingBack
+      case: provider_continues_rollback
+      effects:
+      - RollbackJournal
+    driver_function: src/driver.rs#drive
+  surfaces:
+  - name: memoria
+    kind: runnable-boundary
+    surface: cli
+    entrypoint: cli/src/main.rs
+    delegates_to:
+      symbol: cli/src/main.rs#run
+      command: batch-recovery
+    effects:
+    - cli-io
+    - AcquireRepoLock
+    - InspectRepository
+    - InspectJournal
+    - RollbackJournal
+    - CleanupJournal
+    - ReadSnapshot
+    - PersistJournal
+    - ApplyFilesystemPlan
+    - PersistCompletion
+    - InspectGit
+    - PublishCommit
+    - ReconcileCommit
+    - ReleaseRepoLock
+    evidence:
+    - verification/boundaries/memoria_routes_through_library.md
+    usage_document: USAGE.md
+    smoke_command: smoke
+  representation:
+    closed_variants:
+    - BatchRecoveryBoundaryState
+    - BatchRecoveryBoundaryCommand
+    - BatchRecoveryBoundaryCommandEnvelope
+    - BatchRecoveryBoundaryEvent
+    - BatchRecoveryBoundaryEventEnvelope
+    - BatchRecoveryBoundaryReply
+    - BatchRecoveryBoundaryRejection
+    - BatchRecoveryBoundaryTransition
+    - BatchRecoveryBoundaryTransitionRecord
+    - BatchRecoveryBoundarySourceProvenance
+    - BatchRecoveryBoundaryInput
+    - BatchRecoveryBoundaryEffect
+    - BatchRecoveryBoundaryEffectEnvelope
+    - BatchRecoveryBoundaryEffectResult
+    - BatchRecoveryBoundaryEffectResultEnvelope
+    validated_values: []
+    transition_functions:
+    - transition
+  public_behavior_bindings:
+  - id: memoria-library-public
+    public_kind: capability
+    public_name: memoria-memory
+    contract: contracts/memoria-memory.v1.yaml
+    semantic_function: transition-model
+    machine_inputs:
+    - Init
+    - Open
+    - Read
+    - Write
+    - Delete
+    - Exists
+    - List
+    - ReadMetadata
+    - Apply
+    - BuildContext
+    - Tree
+    - Status
+    - Diff
+    - Commit
+    - Log
+    machine_outputs:
+    - OperationResult
+    - InvalidRequest
+    - OperationError
+    - IllegalTransition
+    observation_source:
+      kind: transition-record
+      command: trace
+  - id: memoria-cli-public
+    public_kind: command
+    public_name: batch-recovery
+    contract: contracts/batch-recovery.v1.yaml
+    semantic_function: transition-model
+    machine_inputs:
+    - Init
+    - Open
+    - Read
+    - Write
+    - Delete
+    - Exists
+    - List
+    - ReadMetadata
+    - Apply
+    - BuildContext
+    - Tree
+    - Status
+    - Diff
+    - Commit
+    - Log
+    machine_outputs:
+    - OperationResult
+    - InvalidRequest
+    - OperationError
+    - IllegalTransition
+    observation_source:
+      kind: transition-record
+      command: trace
+  dependency_behavior_bindings:
+  - id: resolve-batch-recovery-provider
+    capability: resolve-batch-recovery-capability
+    contract: contracts/resolve-batch-recovery-capability.v1.yaml
+    consumer: src/transition.rs#transition
+    resolution: module
+    provider_module: batch-recovery-decisions
+    provider_contract: contracts/resolve-batch-recovery-capability.v1.yaml
+  roles:
+    adapter:
+    - cli/src/main.rs
+    build_support:
+    - justfile
+    - tools/property_runner.sh
+    - tools/fuzz_request.sh
+    - tools/static_analysis.sh
+    counterexample_replay:
+    - tests/properties.rs
+    effect_executor:
+    - src/effects/acquire_lock.rs
+    - src/effects/inspect_repository.rs
+    - src/effects/inspect_journal.rs
+    - src/effects/rollback_journal.rs
+    - src/effects/cleanup_journal.rs
+    - src/effects/read_snapshot.rs
+    - src/effects/persist_journal.rs
+    - src/effects/apply_filesystem.rs
+    - src/effects/persist_completion.rs
+    - src/effects/inspect_git.rs
+    - src/effects/publish_commit.rs
+    - src/effects/reconcile_commit.rs
+    - src/effects/release_lock.rs
+    effect_support:
+    - src/fs.rs
+    - src/journal.rs
+    - src/git.rs
+    fuzz_target:
+    - tests/properties.rs
+    - fuzz/fuzz_targets/request_validation.rs
+    journal:
+    - src/journal.rs
+    machine_driver:
+    - src/driver.rs
+    message_envelope:
+    - src/representation.rs
+    package_manifest:
+    - Cargo.toml
+    - cli/Cargo.toml
+    - fuzz/Cargo.toml
+    parser:
+    - src/parser.rs
+    probe_adapter:
+    - tests/machine_probe.rs
+    property_generator:
+    - tests/properties.rs
+    property_oracle:
+    - tests/properties.rs
+    public_facade:
+    - src/lib.rs
+    replay_bundle:
+    - src/trace.rs
+    repo_facade:
+    - src/repo.rs
+    representation:
+    - src/representation.rs
+    runnable_surface:
+    - cli/src/main.rs
+    tests:
+    - tests/properties.rs
+    - tests/concurrency.rs
+    - tests/package_consumer.rs
+    - tests/support/faults.rs
+    - tests/support/process_worker.rs
+    timeline_projection:
+    - src/trace.rs
+    trace_producer:
+    - tests/trace_producer.rs
+    transition:
+    - src/transition.rs
+    transition_record:
+    - src/transition.rs
+    usage_document:
+    - USAGE.md
+  authority_bindings:
+  - authority: repository-io
+    roles:
+    - effect_executor
+    - effect_support
+    safe_facade: src/fs.rs#execute_confined
+    evidence:
+    - verification/authorities/repository_io.md
+  - authority: local-git
+    roles:
+    - effect_executor
+    - effect_support
+    safe_facade: src/git.rs#execute_local_git
+    evidence:
+    - verification/authorities/local_git.md
+  - authority: cli-stdio
+    roles:
+    - adapter
+    safe_facade: cli/src/main.rs#run
+    evidence:
+    - verification/authorities/cli_stdio.md
+  - authority: filesystem
+    roles:
+    - effect_executor
+    safe_facade: src/effects/release_lock.rs#execute
+    evidence:
+    - verification/authorities/filesystem.md
+  - authority: environment
+    roles:
+    - effect_executor
+    safe_facade: src/effects/apply_filesystem.rs#execute
+    evidence:
+    - verification/authorities/environment.md
+  - authority: process
+    roles:
+    - effect_executor
+    safe_facade: src/effects/apply_filesystem.rs#execute
+    evidence:
+    - verification/authorities/process.md
+  - authority: randomness
+    roles:
+    - effect_executor
+    safe_facade: src/effects/read_snapshot.rs#execute
+    evidence:
+    - verification/authorities/randomness.md
+  - authority: git
+    roles:
+    - effect_executor
+    safe_facade: src/effects/inspect_git.rs#execute
+    evidence:
+    - verification/authorities/git.md
+  allowed_public_reexports:
+  - batch_recovery_decisions
+  allowed_missing_constructors:
+  - BatchReceipt
+  - MemoryFile
+semantic_functions:
+- id: transition-model
+  symbol: src/transition.rs#transition
+  kind: transition
+  purity: pure
+  trust: internal
+  discharges:
+    contracts:
+    - contracts/memoria-memory.v1.yaml
+    - contracts/batch-recovery.v1.yaml
+    invariants:
+    - canonical-effect-order
+    - bounded-durable-recovery
+    - fenced-git-publication
+    - reusable-native-facade
+  evidence:
+    properties:
+    - verification/properties/phase_protocol
+    - verification/properties/provider_routing
+    - verification/properties/crash_recovery
+    - verification/properties/git_publication
+    - verification/properties/public_operations
+    - verification/properties/external_consumer
+  authorities: []
+- id: parse-memory-request
+  symbol: src/parser.rs#parse_request
+  kind: parser
+  purity: pure
+  trust: boundary
+  discharges:
+    invariants:
+    - parsed-host-policy
+  evidence:
+    properties:
+    - verification/properties/request_validation
+  authorities: []
+- id: memory-repo-facade
+  symbol: src/repo.rs#MemoryRepo::dispatch
+  kind: adapter
+  purity: effectful
+  trust: boundary
+  evidence:
+    properties:
+    - verification/properties/public_operations
+    - verification/properties/external_consumer
+  authorities:
+  - environment
+  - filesystem
+  - git
+  - local-git
+  - process
+  - randomness
+  - repository-io
+- id: memory-driver
+  symbol: src/driver.rs#drive
+  kind: adapter
+  purity: effectful
+  trust: boundary
+  evidence:
+    properties:
+    - verification/properties/phase_protocol
+  authorities:
+  - environment
+  - filesystem
+  - git
+  - local-git
+  - process
+  - randomness
+  - repository-io
+- id: filesystem-support
+  symbol: src/fs.rs#execute_confined
+  kind: effect-executor
+  purity: effectful
+  trust: boundary
+  discharges:
+    invariants:
+    - confined-serialized-storage
+  evidence:
+    properties:
+    - verification/properties/filesystem_safety
+    - verification/properties/process_concurrency
+  authorities:
+  - repository-io
+- id: git-support
+  symbol: src/git.rs#execute_local_git
+  kind: effect-executor
+  purity: effectful
+  trust: boundary
+  evidence:
+    properties:
+    - verification/properties/git_publication
+  authorities:
+  - local-git
+- id: cli-adapter
+  symbol: cli/src/main.rs#run
+  kind: adapter
+  purity: effectful
+  trust: boundary
+  evidence:
+    properties:
+    - verification/properties/external_consumer
+  authorities:
+  - cli-stdio
+  - local-git
+  - repository-io
+- id: acquire-lock-executor
+  symbol: src/effects/acquire_lock.rs#execute
+  kind: effect-executor
+  purity: effectful
+  trust: boundary
+  evidence:
+    properties:
+    - verification/properties/process_concurrency
+  authorities:
+  - filesystem
+  - repository-io
+- id: inspect-repository-executor
+  symbol: src/effects/inspect_repository.rs#execute
+  kind: effect-executor
+  purity: effectful
+  trust: boundary
+  evidence:
+    properties:
+    - verification/properties/filesystem_safety
+  authorities:
+  - environment
+  - filesystem
+  - git
+  - local-git
+  - process
+  - randomness
+- id: inspect-journal-executor
+  symbol: src/effects/inspect_journal.rs#execute
+  kind: effect-executor
+  purity: effectful
+  trust: boundary
+  evidence:
+    properties:
+    - verification/properties/crash_recovery
+  authorities:
+  - filesystem
+- id: rollback-journal-executor
+  symbol: src/effects/rollback_journal.rs#execute
+  kind: effect-executor
+  purity: effectful
+  trust: boundary
+  evidence:
+    properties:
+    - verification/properties/crash_recovery
+  authorities:
+  - environment
+  - filesystem
+  - process
+- id: cleanup-journal-executor
+  symbol: src/effects/cleanup_journal.rs#execute
+  kind: effect-executor
+  purity: effectful
+  trust: boundary
+  evidence:
+    properties:
+    - verification/properties/crash_recovery
+  authorities:
+  - environment
+  - filesystem
+  - process
+- id: read-snapshot-executor
+  symbol: src/effects/read_snapshot.rs#execute
+  kind: effect-executor
+  purity: effectful
+  trust: boundary
+  evidence:
+    properties:
+    - verification/properties/filesystem_safety
+  authorities:
+  - filesystem
+  - randomness
+- id: persist-journal-executor
+  symbol: src/effects/persist_journal.rs#execute
+  kind: effect-executor
+  purity: effectful
+  trust: boundary
+  evidence:
+    properties:
+    - verification/properties/crash_recovery
+  authorities:
+  - environment
+  - filesystem
+  - process
+- id: apply-filesystem-executor
+  symbol: src/effects/apply_filesystem.rs#execute
+  kind: effect-executor
+  purity: effectful
+  trust: boundary
+  evidence:
+    properties:
+    - verification/properties/crash_recovery
+  authorities:
+  - environment
+  - filesystem
+  - process
+- id: persist-completion-executor
+  symbol: src/effects/persist_completion.rs#execute
+  kind: effect-executor
+  purity: effectful
+  trust: boundary
+  evidence:
+    properties:
+    - verification/properties/crash_recovery
+  authorities:
+  - environment
+  - filesystem
+  - process
+- id: inspect-git-executor
+  symbol: src/effects/inspect_git.rs#execute
+  kind: effect-executor
+  purity: effectful
+  trust: boundary
+  evidence:
+    properties:
+    - verification/properties/git_publication
+  authorities:
+  - git
+  - local-git
+- id: publish-commit-executor
+  symbol: src/effects/publish_commit.rs#execute
+  kind: effect-executor
+  purity: effectful
+  trust: boundary
+  evidence:
+    properties:
+    - verification/properties/git_publication
+  authorities:
+  - environment
+  - filesystem
+  - git
+  - local-git
+  - process
+- id: reconcile-commit-executor
+  symbol: src/effects/reconcile_commit.rs#execute
+  kind: effect-executor
+  purity: effectful
+  trust: boundary
+  evidence:
+    properties:
+    - verification/properties/git_publication
+  authorities:
+  - environment
+  - filesystem
+  - git
+  - local-git
+  - process
+- id: release-lock-executor
+  symbol: src/effects/release_lock.rs#execute
+  kind: effect-executor
+  purity: effectful
+  trust: boundary
+  evidence:
+    properties:
+    - verification/properties/process_concurrency
+  authorities:
+  - filesystem
+x-rms:
+  semantic_revision:
+    digest: sha256:a2684fda3fe6afdf162b8013ffe5bd26dd7d9a1ce2c3eccff4d3e71ffc2e8923
+    change_record: verification/changes/record-producer-created-public-result-types-without-public-constructors-b26e33ff0965.yaml
+    change_record_digest: sha256:b26e33ff0965856e26ced58ef23cd4336cbb746fe8aca0d2b4fcfd8bd1670773
+    applied_by: rms spec apply

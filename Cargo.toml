@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "modules/batch-recovery-decisions",
+    "modules/batch-recovery-boundary",
+    "modules/batch-recovery-boundary/cli",
+]
+resolver = "2"

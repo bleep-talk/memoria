@@ -1,0 +1,11 @@
+# Public operation and result evidence
+
+`rms property run modules/batch-recovery-boundary/implementation.yaml --profile smoke` selected `check_public_operations` and passed on macOS arm64. Every declared public operation enters the repository lock before effects. Invalid request input produces no effect. The external Cargo consumer imported the public `memoria-memory` facade and exercised initialization, write, and read.
+
+`MemoryFile` is a read result. `MemoryRepo::read` returns it after the driver parses a snapshot. The driver constructs it with the crate-private `MemoryFile::from_document` in `src/driver.rs`. A public constructor would let callers invent a file result that the repository did not observe.
+
+`BatchReceipt` is a mutation result. `MemoryRepo::write`, `delete`, and `apply` return it after the operation lifecycle completes. The driver constructs it with the crate-private `BatchReceipt::new` and the stable operation ID. A public constructor would let callers invent a completed-operation receipt.
+
+`MemoryRepo` itself is constructed through public `init`, `init_with_policy`, `open`, and `open_with_policy`. It is not a producer-created result type and is not listed in `architecture.allowed_missing_constructors`.
+
+This evidence concerns the named producers and focused proof. It does not assert that the bounded tests exhaust all filesystem or Git interleavings.

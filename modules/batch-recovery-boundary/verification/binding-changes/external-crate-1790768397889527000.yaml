@@ -1,0 +1,92 @@
+after_dependencies:
+  allowed_external_crates:
+  - batch-recovery-decisions
+  - clap
+  - fs2
+  - git2
+  - libfuzzer_sys
+  - rustix
+  - serde
+  - serde_json
+  - tempfile
+  - uuid
+  external_crates:
+  - crate: clap
+    package: clap
+    version_requirement: '4'
+  - crate: fs2
+    package: fs2
+    version_requirement: '0.4'
+  - crate: git2
+    package: git2
+    version_requirement: '0.20'
+  - crate: libfuzzer_sys
+    package: libfuzzer-sys
+    version_requirement: '0.4'
+  - crate: rustix
+    package: rustix
+    version_requirement: '1'
+  - crate: serde
+    package: serde
+    version_requirement: '1'
+  - crate: serde_json
+    package: serde_json
+    version_requirement: '1'
+  - crate: tempfile
+    package: tempfile
+    version_requirement: '3'
+  - crate: uuid
+    package: uuid
+    version_requirement: '1'
+  local_modules:
+  - batch-recovery-decisions
+before_dependencies:
+  allowed_external_crates:
+  - batch-recovery-decisions
+  - clap
+  - fs2
+  - git2
+  - rustix
+  - serde
+  - serde_json
+  - tempfile
+  - uuid
+  external_crates:
+  - crate: clap
+    package: clap
+    version_requirement: '4'
+  - crate: fs2
+    package: fs2
+    version_requirement: '0.4'
+  - crate: git2
+    package: git2
+    version_requirement: '0.20'
+  - crate: rustix
+    package: rustix
+    version_requirement: '1'
+  - crate: serde
+    package: serde
+    version_requirement: '1'
+  - crate: serde_json
+    package: serde_json
+    version_requirement: '1'
+  - crate: tempfile
+    package: tempfile
+    version_requirement: '3'
+  - crate: uuid
+    package: uuid
+    version_requirement: '1'
+  local_modules:
+  - batch-recovery-decisions
+declaration:
+  crate: libfuzzer_sys
+  package: libfuzzer-sys
+  version_requirement: '0.4'
+previous_revision:
+  applied_by: rms spec apply
+  change_record: verification/changes/make-the-nightly-request-generator-a-rust-function-called-by-the-fuzz-oracle-c3248d6b1a3d.yaml
+  change_record_digest: sha256:c3248d6b1a3d00a31d6304d2ffd219f9b9c552bec05b1fc930d6e9b50b2d4cc1
+  digest: sha256:2d566284d55f2d04e982216d5f31ce574b0e5555cb8b3f40518bb165ba578bbd
+recovered_exact_legacy_addition: true
+route_receipt: 6e521a39a3f806f5cb8c9a832c012c6e313c4961880ab2ebcb46b39a5ef866f9
+spec: rms/binding-external-crate-change/v0.1
