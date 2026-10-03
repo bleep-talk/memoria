@@ -2,7 +2,7 @@ spec: rms/contract/v0.3
 name: memoria-memory
 version: '1'
 kind: capability
-meaning: Native MemoryRepo operations init, open, read, write, delete, exists, list, read_metadata, apply, build_context, tree, status, diff, commit, and log. All operations use host policy and one cooperating-call repository lock. Write, delete, and apply use optimistic expected hashes and a bounded durable journal. Commit is a separate fenced local Git operation.
+meaning: Native MemoryRepo operations init, open, read, write, delete, exists, list, read_metadata, apply, build_context, tree, status, diff, commit, log, and search. All operations use host policy and one cooperating-call repository lock. Write, delete, and apply use optimistic expected hashes and a bounded durable journal. Commit is a separate fenced local Git operation.
 semantics:
   behavior:
     observability: full
@@ -30,7 +30,7 @@ semantics:
         property: generated-request-validation
     guarantees:
     - id: complete-native-operation-set
-      statement: The facade exposes exactly the fifteen named operations. Reads, metadata, listings, context, tree, status, diff, and log observe a locked repository snapshot after recovery. Init establishes a supported repository; open validates and recovers one. Neither operation reports success before required durability is observed.
+      statement: The facade exposes the existing fifteen operations and read-only search. Search scans managed Markdown from a locked recovered snapshot. Search matches literal case-sensitive text and returns bounded deterministic path-and-line results with a limited flag. Init establishes a supported repository; open validates and recovers one.
       evaluation:
         kind: external
         property: public-operation-routing

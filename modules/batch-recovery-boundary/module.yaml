@@ -71,7 +71,7 @@ invariants:
   authority: transition
   enforced_by: transition-model
 - id: reusable-native-facade
-  statement: All fifteen operations are available through one native MemoryRepo facade. The memoria CLI calls that facade and emits stable versioned JSON results and errors. Native package consumers need no CLI internals.
+  statement: MemoryRepo exposes the existing fifteen operations and read-only search. Search returns deterministic bounded literal matches from managed Markdown after repository recovery. The memoria CLI calls that facade and emits stable versioned JSON results and errors. Native package consumers need no CLI internals.
   kind: safety
   authority: transition
   enforced_by: transition-model
@@ -181,6 +181,7 @@ verification:
   - verification/laws/bounded_durable_recovery.md
   - verification/laws/fenced_git_publication.md
   - verification/laws/reusable_native_facade.md
+  - verification/laws/search_facade.md
   contracts:
   - verification/contracts/batch-recovery.md
   - verification/contracts/resolve-batch-recovery-dependency.md
@@ -188,6 +189,8 @@ verification:
   - verification/contracts/memoria_memory.md
   - verification/contracts/memoria_cli.md
   - verification/contracts/resolve_batch_recovery_provider_sync.md
+  - verification/contracts/search_memory.md
+  - verification/contracts/search_cli.md
   scenarios: []
   boundaries:
   - verification/boundaries/malformed_input.md
@@ -207,11 +210,11 @@ verification:
   - verification/reconciliation/journal_recovery.md
   - verification/reconciliation/git_publication.md
 x-rms:
-  last_semantic_intent: Record producer-created public result types without public constructors.
+  last_semantic_intent: Record SearchMatch and SearchResult as repository-produced read results.
   semantic_revision:
-    digest: sha256:a2684fda3fe6afdf162b8013ffe5bd26dd7d9a1ce2c3eccff4d3e71ffc2e8923
-    change_record: verification/changes/record-producer-created-public-result-types-without-public-constructors-b26e33ff0965.yaml
-    change_record_digest: sha256:b26e33ff0965856e26ced58ef23cd4336cbb746fe8aca0d2b4fcfd8bd1670773
+    digest: sha256:f3805e23caf4700a311b6887276b312a18cfb414cb7d0f24d370bf75e359b0c0
+    change_record: verification/changes/record-searchmatch-and-searchresult-as-repository-produced-read-results-e4e491681f53.yaml
+    change_record_digest: sha256:e4e491681f5385d9afb5282c92a0739d68531d987e2dd4ce16e72fe6a257217f
     applied_by: rms spec apply
 fuzz_targets:
 - id: generated-request-validation

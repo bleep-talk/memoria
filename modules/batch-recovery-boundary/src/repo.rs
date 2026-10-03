@@ -9,6 +9,49 @@ use std::collections::BTreeMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
 
+pub const DEFAULT_SEARCH_LIMIT: usize = 100;
+pub const MAX_SEARCH_LIMIT: usize = 1000;
+pub const MAX_SEARCH_QUERY_BYTES: usize = 256;
+pub const MAX_SEARCH_LINE_BYTES: usize = 512;
+
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize)]
+pub struct SearchMatch {
+    pub(crate) path: String,
+    pub(crate) line: usize,
+    pub(crate) text: String,
+    pub(crate) truncated: bool,
+}
+
+impl SearchMatch {
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+    pub fn line(&self) -> usize {
+        self.line
+    }
+    pub fn text(&self) -> &str {
+        &self.text
+    }
+    pub fn truncated(&self) -> bool {
+        self.truncated
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize)]
+pub struct SearchResult {
+    pub(crate) matches: Vec<SearchMatch>,
+    pub(crate) limited: bool,
+}
+
+impl SearchResult {
+    pub fn matches(&self) -> &[SearchMatch] {
+        &self.matches
+    }
+    pub fn limited(&self) -> bool {
+        self.limited
+    }
+}
+
 #[derive(Debug)]
 pub enum RepoError {
     Memory(MemoryError),
@@ -273,6 +316,21 @@ impl MemoryRepo {
     pub fn list(&self) -> Result<Vec<MemoryPath>, RepoError> {
         match self.dispatch(Operation::List)? {
             Output::Paths(paths) => Ok(paths),
+            _ => unreachable!(),
+        }
+    }
+
+    /// Match a nonempty literal on each line of managed Markdown.
+    pub fn search(&self, query: &str, limit: usize) -> Result<SearchResult, RepoError> {
+        if query.is_empty()
+            || query.len() > MAX_SEARCH_QUERY_BYTES
+            || query.chars().any(|ch| ch.is_control())
+            || !(1..=MAX_SEARCH_LIMIT).contains(&limit)
+        {
+            return Err(RepoError::InvalidRequest("search query or limit".into()));
+        }
+        match self.dispatch(Operation::Search(query.to_owned(), limit))? {
+            Output::Search(result) => Ok(result),
             _ => unreachable!(),
         }
     }

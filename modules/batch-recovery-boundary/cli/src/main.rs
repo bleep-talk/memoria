@@ -1,6 +1,7 @@
 use clap::{Parser, Subcommand};
 use memoria_memory::{
     ContentHash, ContextOptions, ExpectedContent, MemoryRepo, Mutation, RepoError,
+    DEFAULT_SEARCH_LIMIT,
 };
 use serde_json::{json, Value};
 use std::io::{self, Read, Write};
@@ -24,6 +25,11 @@ enum Command {
     },
     Read {
         path: String,
+    },
+    Search {
+        query: String,
+        #[arg(long, default_value_t = DEFAULT_SEARCH_LIMIT)]
+        limit: usize,
     },
     Write {
         path: String,
@@ -111,6 +117,7 @@ fn run(args: Args) -> Result<(), RepoError> {
                     let file = repository.read(&path)?;
                     json!({"path":path,"content":file.content(),"hash":file.hash().as_str(),"metadata":file.metadata()})
                 }
+                Command::Search { query, limit } => json!(repository.search(&query, limit)?),
                 Command::Write { path, expect } => {
                     let mut content = String::new();
                     io::stdin().read_to_string(&mut content).map_err(|error| {

@@ -7,12 +7,15 @@ memoria init ./memory
 printf '%s\n' '---' 'description: User preference' '---' 'The user prefers Rust.' | memoria --repo ./memory write system/user.md --expect absent
 memoria --repo ./memory context --max-bytes 32768
 memoria --repo ./memory tree --descriptions
+memoria --repo ./memory --json search 'Rust' --limit 100
 memoria --repo ./memory diff
 memoria --repo ./memory commit 'Remember user preference'
 memoria --repo ./memory log
 ```
 
 `read` returns the current Markdown bytes and SHA-256 content hash. To replace a file, pass that hash to `write --expect <hash>`. To delete a file, pass the hash to `delete --expect <hash>`. `apply <batch.json>` accepts a JSON array of tagged create, replace, and delete mutations. The library validates the entire batch before writing a journal.
+
+`search <query>` matches a nonempty, case-sensitive literal on each line of managed Markdown. Results are sorted by path and line. `--limit` defaults to 100 and accepts 1 through 1000. Each returned line is at most 512 UTF-8 bytes; `truncated` marks an excerpt. `limited` reports when more matching lines exist.
 
 ```json
 [

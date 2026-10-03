@@ -1,0 +1,50 @@
+spec: rms/semantic-change/v0.1
+module: modules/batch-recovery/module.yaml
+supersedes:
+- verification/changes/synchronize-the-composite-public-batch-recovery-command-with-the-existing-memoria-boundary-cli-contract-5ff66b122a59.yaml
+intent:
+  summary: Export the bounded read-only search command from the Memoria boundary.
+declaration:
+  purpose: Implement Memoria as a standalone Rust memory library and thin CLI. MemoryRepo exposes init, open, read, write, delete, exists, list, read_metadata, apply, build_context, tree, status, diff, commit, log, and bounded literal search. The domain owns relative Markdown paths, host-owned policy, expected content hashes, deterministic bounded JSON context and tree projections, batch validation, and the recoverable batch lifecycle. A native Rust boundary owns directory-relative no-follow filesystem access, a repository lock, a bounded durable recovery journal under .git, fsync and atomic replacements, and git2 version history with fenced commit publication. Pure decisions and recovery transitions receive typed observed facts and emit typed effect requests; dedicated executors perform IO and return facts. Expose the reusable library public facade and bind a CLI to that facade. Ordinary Markdown and Git remain inspectable; system, knowledge, skills and conversations are default roots. Reject stale writes and protect system/identity.md and system/policy.md. Roll back incomplete batches; completed batches only need cleanup; preserve unexpected external edits with RecoveryConflict. No LLM, networking, checkout or automatic intelligence. Support macOS and Linux local filesystems. Provide property, fault-injection, process-crash, native integration and external package-consumer proof.
+  owns: null
+  effects: null
+  boundary: null
+  remove_boundary: false
+  remove_scaffold: false
+  no_untrusted_boundary_justification: null
+laws: null
+contracts: null
+composition_exports:
+  set: null
+  add:
+  - group: commands
+    name: batch-recovery
+    from: batch-recovery-boundary
+    contract: contracts/batch-recovery.v1.yaml
+  remove: []
+properties: null
+hunt_exceptions: null
+proof_delegations: null
+trace_producers: null
+probe: null
+semantic_functions: null
+implementation_commands: null
+machine: null
+roles: null
+representation: null
+allowed_missing_constructors: null
+evidence:
+  add:
+  - kind: contract
+    proves: batch-recovery
+    path: verification/contracts/search_export.md
+  remove: []
+surfaces: null
+binding_dependencies: null
+artifacts: null
+transformations: null
+authorities: null
+protocol_bindings: null
+authority_bindings: null
+public_behavior_bindings: null
+dependency_behavior_bindings: null

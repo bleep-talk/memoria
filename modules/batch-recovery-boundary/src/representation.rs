@@ -29,6 +29,7 @@ pub enum BatchRecoveryBoundaryCommand {
     Init,
     Open,
     Read,
+    Search,
     Write,
     Delete,
     Exists,

@@ -21,6 +21,10 @@ fn external_consumer_and_cli() {
     .unwrap();
     let context = repo.build_context(ContextOptions::default()).unwrap();
     assert!(context.text().contains("The user prefers Rust."));
+    let search = repo.search("Rust", 10).unwrap();
+    assert_eq!(search.matches().len(), 1);
+    assert_eq!(search.matches()[0].path(), "system/user.md");
+    assert_eq!(search.matches()[0].line(), 4);
     assert_eq!(
         repo.tree(false)
             .unwrap()

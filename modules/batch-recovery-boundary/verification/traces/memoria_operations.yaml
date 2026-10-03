@@ -101,6 +101,39 @@
       }
     },
     {
+      "input": "Command(Search)",
+      "output": {
+        "commands": [],
+        "effects": [
+          {
+            "data": {},
+            "name": "AcquireRepoLock"
+          }
+        ],
+        "events": [],
+        "next_state": {
+          "data": {},
+          "name": "AcquiringLock"
+        },
+        "rejection": null,
+        "reply": null
+      },
+      "scenario_start": true,
+      "source": {
+        "branch": "begin_search",
+        "file": "src/transition.rs",
+        "function": "transition_record"
+      },
+      "state_after": {
+        "data": {},
+        "name": "AcquiringLock"
+      },
+      "state_before": {
+        "data": {},
+        "name": "Ready"
+      }
+    },
+    {
       "input": "Command(Write)",
       "output": {
         "commands": [],

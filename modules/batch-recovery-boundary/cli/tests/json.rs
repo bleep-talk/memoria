@@ -45,6 +45,42 @@ fn json_success_and_request_errors_are_separate_streams() {
 }
 
 #[test]
+fn search_json_reports_lines_and_limit() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("memory");
+    assert!(command()
+        .args(["init", root.to_str().unwrap()])
+        .output()
+        .unwrap()
+        .status
+        .success());
+    std::fs::write(root.join("knowledge/example.md"), "needle\nneedle\n").unwrap();
+    let output = command()
+        .args([
+            "--json",
+            "--repo",
+            root.to_str().unwrap(),
+            "search",
+            "needle",
+            "--limit",
+            "1",
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let reply: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(reply["schema_version"], 1);
+    assert_eq!(reply["data"]["matches"][0]["path"], "knowledge/example.md");
+    assert_eq!(reply["data"]["matches"][0]["line"], 1);
+    assert_eq!(reply["data"]["matches"][0]["text"], "needle");
+    assert_eq!(reply["data"]["limited"], true);
+}
+
+#[test]
 fn invalid_utf8_stdin_is_a_typed_request_error() {
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path().join("memory");

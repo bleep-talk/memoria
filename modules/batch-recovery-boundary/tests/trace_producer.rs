@@ -50,6 +50,7 @@ fn produce_operation_traces() {
         C::Init,
         C::Open,
         C::Read,
+        C::Search,
         C::Write,
         C::Delete,
         C::Exists,

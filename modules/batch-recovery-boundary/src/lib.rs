@@ -23,7 +23,10 @@ mod effects {
     pub mod rollback_journal;
 }
 
-pub use crate::repo::{BatchReceipt, ExpectedContent, MemoryFile, MemoryRepo, RepoError};
+pub use crate::repo::{
+    BatchReceipt, ExpectedContent, MemoryFile, MemoryRepo, RepoError, SearchMatch, SearchResult,
+    DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT,
+};
 pub use crate::representation::*;
 pub use crate::transition::{
     replay_trace, transition, transition_record, BatchRecoveryBoundaryMachine,

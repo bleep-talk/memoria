@@ -2,7 +2,7 @@ spec: rms/contract/v0.3
 name: batch-recovery
 version: '1'
 kind: command
-meaning: Thin memoria CLI for the MemoryRepo operation set. Each invocation emits one JSON envelope with schema_version 1, operation, kind, result, and error. Error codes are stable within version 1. Diagnostics use stderr and do not corrupt JSON stdout. No policy override, checkout, hooks, or networking options exist. JSON encoding behavior is included in external-consumer-and-cli.
+meaning: Thin memoria CLI for the MemoryRepo operation set, including bounded literal search. Each invocation emits one JSON envelope with schema_version 1, operation, kind, result, and error. Error codes are stable within version 1. Diagnostics use stderr and do not corrupt JSON stdout. No policy override, checkout, hooks, or networking options exist. JSON encoding behavior is included in external-consumer-and-cli.
 semantics:
   behavior:
     observability: full
@@ -30,7 +30,7 @@ semantics:
         property: generated-request-validation
     guarantees:
     - id: complete-native-operation-set
-      statement: The facade exposes exactly the fifteen named operations. Reads, metadata, listings, context, tree, status, diff, and log observe a locked repository snapshot after recovery. Init establishes a supported repository; open validates and recovers one. Neither operation reports success before required durability is observed.
+      statement: The CLI exposes the existing fifteen operations and read-only search. Search scans managed Markdown from a locked recovered snapshot. Search matches literal case-sensitive text and returns bounded deterministic path-and-line results with a limited flag. Init establishes a supported repository; open validates and recovers one.
       evaluation:
         kind: external
         property: public-operation-routing

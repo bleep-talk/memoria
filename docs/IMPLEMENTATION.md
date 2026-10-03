@@ -12,7 +12,9 @@ Pure roles own validation, preconditions, projections, and recovery decisions. N
 
 ## Library and CLI
 
-One `MemoryRepo` facade exposes `init`, `open`, `read`, `write`, `delete`, `exists`, `list`, `read_metadata`, `apply`, `build_context`, `tree`, `status`, `diff`, `commit`, and `log`.
+One `MemoryRepo` facade exposes `init`, `open`, `read`, `search`, `write`, `delete`, `exists`, `list`, `read_metadata`, `apply`, `build_context`, `tree`, `status`, `diff`, `commit`, and `log`.
+
+Search uses literal case-sensitive matching over managed Markdown. It returns ordered path, line, and text matches with an explicit `limited` flag. Search does not modify memory or persist an index.
 
 Reads return a content hash. Mutations require an expected content hash or an explicit absent precondition. The CLI has no policy bypass. The default policy protects `system/identity.md` and `system/policy.md` from mutation.
 

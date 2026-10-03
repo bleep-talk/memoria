@@ -19,7 +19,8 @@ Memoria stores memory. The agent decides what to remember and when to use it. Th
 
 1. Call `context` when the task needs persistent context. It includes eligible Markdown under `system/` in deterministic order. Its default limit is 32 KiB. If it reports `context_too_large`, resolve the size deliberately; do not truncate or silently skip a file.
 2. Use `tree --descriptions` to discover other memory. Read only relevant paths. `knowledge/` holds durable facts, `skills/` holds procedures, and `conversations/` holds experience. These roots do not enter context automatically.
-3. Remember a fact when it is likely to help later or when the user asks. Do not promote a conversation into durable memory automatically. Place frequently needed, compact facts in `system/`; put details that can be fetched on demand in `knowledge/` or `skills/`.
+3. Use `search <query>` to find literal, case-sensitive lines across managed Markdown when the path is unknown. Results are ordered by path and line. Check `limited`; narrow the query or inspect relevant files when the result set is capped.
+4. Remember a fact when it is likely to help later or when the user asks. Do not promote a conversation into durable memory automatically. Place frequently needed, compact facts in `system/`; put details that can be fetched on demand in `knowledge/` or `skills/`.
 
 ## Mutate and reconcile
 
@@ -38,7 +39,8 @@ Use `--repo <directory>` unless the current directory is the intended memory rep
 memoria --repo <directory> --json context
 memoria --repo <directory> --json tree --descriptions
 memoria --repo <directory> --json read knowledge/project.md
+memoria --repo <directory> --json search 'project decision'
 printf '%s\n' 'A durable fact.' | memoria --repo <directory> --json write knowledge/project.md --expect absent
 ```
 
-The default policy protects `system/identity.md` and `system/policy.md` from mutation. The CLI offers no policy bypass. Memoria has no search or checkout command; use host-approved filesystem discovery or Git operations when those tasks require them.
+The default policy protects `system/identity.md` and `system/policy.md` from mutation. The CLI offers no policy bypass. Memoria has no checkout command; use host-approved Git operations when that task requires them.

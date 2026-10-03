@@ -1,7 +1,10 @@
 //! The boundary driver owns the transition/effect/result loop.
 use crate::fs::Confined;
 use crate::journal::Journal;
-use crate::repo::{BatchReceipt, MemoryFile, MemoryRepo, RepoError};
+use crate::repo::{
+    BatchReceipt, MemoryFile, MemoryRepo, RepoError, SearchMatch, SearchResult,
+    MAX_SEARCH_LINE_BYTES,
+};
 use crate::representation::{
     BatchRecoveryBoundaryCommand as C, BatchRecoveryBoundaryEffect as E,
     BatchRecoveryBoundaryEffectResult as R, BatchRecoveryBoundaryInput as I,
@@ -20,6 +23,7 @@ pub(crate) enum Operation {
     Init,
     Open,
     Read(MemoryPath),
+    Search(String, usize),
     Exists(MemoryPath),
     ReadMetadata(MemoryPath),
     List,
@@ -37,6 +41,7 @@ impl Operation {
             Self::Init => C::Init,
             Self::Open => C::Open,
             Self::Read(_) => C::Read,
+            Self::Search(_, _) => C::Search,
             Self::Exists(_) => C::Exists,
             Self::ReadMetadata(_) => C::ReadMetadata,
             Self::List => C::List,
@@ -54,6 +59,7 @@ impl Operation {
 pub(crate) enum Output {
     Ready,
     File(MemoryFile),
+    Search(SearchResult),
     Bool(bool),
     Metadata(BTreeMap<String, serde_json::Value>),
     Paths(Vec<MemoryPath>),
@@ -122,6 +128,12 @@ impl NativeContext {
                     Output::Metadata(document.metadata().clone())
                 }
             }
+            Operation::Search(query, limit) => Output::Search(search_snapshot(
+                files.list(&self.policy)?,
+                query,
+                *limit,
+                &self.policy,
+            )?),
             Operation::Exists(path) => Output::Bool(
                 files
                     .read(path.as_str(), self.policy.max_file_bytes())?
@@ -206,6 +218,66 @@ impl NativeContext {
         self.output = output;
         Ok(GitFact::QueryReady)
     }
+}
+
+fn excerpt(line: &str, match_offset: usize) -> (String, bool) {
+    if line.len() <= MAX_SEARCH_LINE_BYTES {
+        return (line.to_owned(), false);
+    }
+    let desired = match_offset.saturating_sub(128);
+    let start = line
+        .char_indices()
+        .find_map(|(offset, _)| (offset >= desired).then_some(offset))
+        .unwrap_or(line.len());
+    let mut end = start;
+    for (offset, ch) in line[start..].char_indices() {
+        if offset + ch.len_utf8() > MAX_SEARCH_LINE_BYTES {
+            break;
+        }
+        end = start + offset + ch.len_utf8();
+    }
+    (line[start..end].to_owned(), true)
+}
+
+/// A pure projection over the confined, locked working-file snapshot.
+fn search_snapshot(
+    snapshot: Vec<SnapshotEntry>,
+    query: &str,
+    limit: usize,
+    policy: &Policy,
+) -> Result<SearchResult, RepoError> {
+    let mut files = Vec::new();
+    for entry in snapshot {
+        match entry {
+            SnapshotEntry::File(path, content) => files.push((path, content)),
+            SnapshotEntry::Directory(_) => {}
+            SnapshotEntry::Unsafe(path) => return Err(RepoError::UnsafePath(path.to_string())),
+        }
+    }
+    files.sort_by(|a, b| a.0.as_str().as_bytes().cmp(b.0.as_str().as_bytes()));
+    let mut matches = Vec::new();
+    let mut limited = false;
+    for (path, content) in files {
+        let _ = parse_markdown(content.as_bytes(), policy).map_err(|error| {
+            RepoError::InvalidRequest(format!("invalid Markdown at {path}: {error}"))
+        })?;
+        for (index, line) in content.lines().enumerate() {
+            if let Some(offset) = line.find(query) {
+                if matches.len() == limit {
+                    limited = true;
+                    continue;
+                }
+                let (text, truncated) = excerpt(line, offset);
+                matches.push(SearchMatch {
+                    path: path.as_str().to_owned(),
+                    line: index + 1,
+                    text,
+                    truncated,
+                });
+            }
+        }
+    }
+    Ok(SearchResult { matches, limited })
 }
 
 fn execute(context: &mut NativeContext, effect: E) -> R {

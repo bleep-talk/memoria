@@ -1,0 +1,534 @@
+spec: rms/semantic-change/v0.1
+module: modules/batch-recovery-boundary/module.yaml
+supersedes:
+- verification/changes/record-producer-created-public-result-types-without-public-constructors-b26e33ff0965.yaml
+intent:
+  summary: Add bounded literal search to the public Memoria facade and CLI.
+declaration: null
+laws:
+  add: []
+  set:
+  - id: reusable-native-facade
+    statement: MemoryRepo exposes the existing fifteen operations and read-only search. Search returns deterministic bounded literal matches from managed Markdown after repository recovery. The memoria CLI calls that facade and emits stable versioned JSON results and errors. Native package consumers need no CLI internals.
+    kind: safety
+    authority: transition
+    enforced_by: transition-model
+  remove: []
+contracts:
+  add: []
+  set:
+  - name: memoria-memory
+    kind: capability
+    direction: provided
+    version: '1'
+    command: null
+    meaning: Native MemoryRepo operations init, open, read, write, delete, exists, list, read_metadata, apply, build_context, tree, status, diff, commit, log, and search. All operations use host policy and one cooperating-call repository lock. Write, delete, and apply use optimistic expected hashes and a bounded durable journal. Commit is a separate fenced local Git operation.
+    accepts: []
+    ensures: []
+    rejects: []
+    semantics:
+      behavior:
+        observability: full
+        observations:
+        - id: outcome-kind
+          source:
+            kind: output
+            pointer: /kind
+          value:
+            variant:
+            - accepted
+            - invalid-request
+            - operation-error
+        assumptions:
+        - id: host-policy-and-storage
+          statement: The host supplies policy and root authority. Successful durability observations require the filesystem to honor the declared flush operations. Advisory locking coordinates cooperating calls only; an external writer can still cause a conflict.
+          evaluation:
+            kind: external
+            property: repository-effect-safety
+        requires:
+        - id: parse-and-policy-check
+          statement: The boundary checks operation syntax, limits, repository form, managed-path membership, and required expected values before admitting a requested operation. The CLI cannot override policy.
+          evaluation:
+            kind: external
+            property: generated-request-validation
+        guarantees:
+        - id: complete-native-operation-set
+          statement: The facade exposes the existing fifteen operations and read-only search. Search scans managed Markdown from a locked recovered snapshot. Search matches literal case-sensitive text and returns bounded deterministic path-and-line results with a limited flag. Init establishes a supported repository; open validates and recovers one.
+          evaluation:
+            kind: external
+            property: public-operation-routing
+        - id: provider-owned-decisions
+          statement: Pure validation, rendering, expected-hash checks, and recovery decisions use the bound provider. The boundary supplies typed observations and does not duplicate those rules.
+          evaluation:
+            kind: external
+            property: provider-decision-routing
+        - id: durable-batch-and-recovery
+          statement: Complete validation precedes a requested mutation. A bounded journal is durable before apply. Completion is durable before success. Recovery rolls back incomplete journals and cleans complete journals. Unexpected external edits produce RecoveryConflict without overwriting the conflicting content.
+          evaluation:
+            kind: external
+            property: crash-and-failure-schedules
+        - id: separate-fenced-commit
+          statement: Only commit publishes a Git commit. It rejects pre-existing staged changes, checks the expected HEAD, uses a conditional reference update, and reconciles uncertain publication before reporting success.
+          evaluation:
+            kind: external
+            property: commit-publication-schedules
+        - id: importable-library
+          statement: A separate Cargo consumer imports memoria-memory through the public MemoryRepo facade. The nested memoria CLI calls that same facade.
+          evaluation:
+            kind: external
+            property: external-consumer-and-cli
+        failures:
+        - id: invalid-input-result
+          statement: Invalid syntax or an invalid operation envelope returns InvalidRequest with no repository effects.
+          evaluation:
+            kind: external
+            property: generated-request-validation
+        - id: typed-operation-error
+          statement: Operational errors include PolicyViolation, UnsupportedRepository, UnsafePath, NotFound, AlreadyExists, ExpectedHashMismatch, JournalLimitExceeded, InvalidJournal, LockUnavailable, IoError, RecoveryRequired, RecoveryConflict, StagedChanges, HeadMismatch, PublicationConflict, PublicationUnknown, and IllegalTransition. Errors disclose whether recovery or publication reconciliation remains necessary. No failed durability or unknown publication becomes success.
+          evaluation:
+            kind: external
+            property: crash-and-failure-schedules
+        cases:
+        - id: operation-accepted
+          statement: The operation returns its typed result after its required phases.
+          when:
+            equals:
+              left:
+                observation: outcome-kind
+              right:
+                literal: accepted
+          outcome:
+            kind: accepted
+            expression:
+              equals:
+                left:
+                  observation: outcome-kind
+                right:
+                  literal: accepted
+          ensures: []
+          permits:
+            state_changes:
+            - /repository
+            - /journal
+            - /git
+            - /resources
+            events: []
+            effects:
+            - AcquireRepoLock
+            - InspectRepository
+            - InspectJournal
+            - RollbackJournal
+            - CleanupJournal
+            - ReadSnapshot
+            - PersistJournal
+            - ApplyFilesystemPlan
+            - PersistCompletion
+            - InspectGit
+            - PublishCommit
+            - ReconcileCommit
+            - ReleaseRepoLock
+            - cli-io
+        - id: request-invalid
+          statement: Invalid boundary input is rejected before repository effects.
+          when:
+            equals:
+              left:
+                observation: outcome-kind
+              right:
+                literal: invalid-request
+          outcome:
+            kind: rejected
+            category: invalid-request
+            expression:
+              equals:
+                left:
+                  observation: outcome-kind
+                right:
+                  literal: invalid-request
+          ensures: []
+          permits:
+            state_changes: []
+            events: []
+            effects: []
+        - id: operation-error
+          statement: An admitted operation returns a typed error. Recovery work or a partially applied journal can exist; the error does not claim a no-mutation outcome.
+          when:
+            equals:
+              left:
+                observation: outcome-kind
+              right:
+                literal: operation-error
+          outcome:
+            kind: rejected
+            category: operation-error
+            expression:
+              equals:
+                left:
+                  observation: outcome-kind
+                right:
+                  literal: operation-error
+          ensures: []
+          permits:
+            state_changes:
+            - /repository
+            - /journal
+            - /git
+            - /resources
+            events: []
+            effects:
+            - AcquireRepoLock
+            - InspectRepository
+            - InspectJournal
+            - RollbackJournal
+            - CleanupJournal
+            - ReadSnapshot
+            - PersistJournal
+            - ApplyFilesystemPlan
+            - PersistCompletion
+            - InspectGit
+            - PublishCommit
+            - ReconcileCommit
+            - ReleaseRepoLock
+            - cli-io
+        invariants: []
+        case_policy:
+          coverage: exhaustive
+          overlap: forbidden
+    protocol: null
+  - name: batch-recovery
+    kind: command
+    direction: provided
+    version: '1'
+    command: null
+    meaning: Thin memoria CLI for the MemoryRepo operation set, including bounded literal search. Each invocation emits one JSON envelope with schema_version 1, operation, kind, result, and error. Error codes are stable within version 1. Diagnostics use stderr and do not corrupt JSON stdout. No policy override, checkout, hooks, or networking options exist. JSON encoding behavior is included in external-consumer-and-cli.
+    accepts: []
+    ensures: []
+    rejects: []
+    semantics:
+      behavior:
+        observability: full
+        observations:
+        - id: outcome-kind
+          source:
+            kind: output
+            pointer: /kind
+          value:
+            variant:
+            - accepted
+            - invalid-request
+            - operation-error
+        assumptions:
+        - id: host-policy-and-storage
+          statement: The host supplies policy and root authority. Successful durability observations require the filesystem to honor the declared flush operations. Advisory locking coordinates cooperating calls only; an external writer can still cause a conflict.
+          evaluation:
+            kind: external
+            property: repository-effect-safety
+        requires:
+        - id: parse-and-policy-check
+          statement: The boundary checks operation syntax, limits, repository form, managed-path membership, and required expected values before admitting a requested operation. The CLI cannot override policy.
+          evaluation:
+            kind: external
+            property: generated-request-validation
+        guarantees:
+        - id: complete-native-operation-set
+          statement: The CLI exposes the existing fifteen operations and read-only search. Search scans managed Markdown from a locked recovered snapshot. Search matches literal case-sensitive text and returns bounded deterministic path-and-line results with a limited flag. Init establishes a supported repository; open validates and recovers one.
+          evaluation:
+            kind: external
+            property: public-operation-routing
+        - id: provider-owned-decisions
+          statement: Pure validation, rendering, expected-hash checks, and recovery decisions use the bound provider. The boundary supplies typed observations and does not duplicate those rules.
+          evaluation:
+            kind: external
+            property: provider-decision-routing
+        - id: durable-batch-and-recovery
+          statement: Complete validation precedes a requested mutation. A bounded journal is durable before apply. Completion is durable before success. Recovery rolls back incomplete journals and cleans complete journals. Unexpected external edits produce RecoveryConflict without overwriting the conflicting content.
+          evaluation:
+            kind: external
+            property: crash-and-failure-schedules
+        - id: separate-fenced-commit
+          statement: Only commit publishes a Git commit. It rejects pre-existing staged changes, checks the expected HEAD, uses a conditional reference update, and reconciles uncertain publication before reporting success.
+          evaluation:
+            kind: external
+            property: commit-publication-schedules
+        - id: importable-library
+          statement: A separate Cargo consumer imports memoria-memory through the public MemoryRepo facade. The nested memoria CLI calls that same facade.
+          evaluation:
+            kind: external
+            property: external-consumer-and-cli
+        failures:
+        - id: invalid-input-result
+          statement: Invalid syntax or an invalid operation envelope returns InvalidRequest with no repository effects.
+          evaluation:
+            kind: external
+            property: generated-request-validation
+        - id: typed-operation-error
+          statement: Operational errors include PolicyViolation, UnsupportedRepository, UnsafePath, NotFound, AlreadyExists, ExpectedHashMismatch, JournalLimitExceeded, InvalidJournal, LockUnavailable, IoError, RecoveryRequired, RecoveryConflict, StagedChanges, HeadMismatch, PublicationConflict, PublicationUnknown, and IllegalTransition. Errors disclose whether recovery or publication reconciliation remains necessary. No failed durability or unknown publication becomes success.
+          evaluation:
+            kind: external
+            property: crash-and-failure-schedules
+        cases:
+        - id: operation-accepted
+          statement: The operation returns its typed result after its required phases.
+          when:
+            equals:
+              left:
+                observation: outcome-kind
+              right:
+                literal: accepted
+          outcome:
+            kind: accepted
+            expression:
+              equals:
+                left:
+                  observation: outcome-kind
+                right:
+                  literal: accepted
+          ensures: []
+          permits:
+            state_changes:
+            - /repository
+            - /journal
+            - /git
+            - /resources
+            events: []
+            effects:
+            - AcquireRepoLock
+            - InspectRepository
+            - InspectJournal
+            - RollbackJournal
+            - CleanupJournal
+            - ReadSnapshot
+            - PersistJournal
+            - ApplyFilesystemPlan
+            - PersistCompletion
+            - InspectGit
+            - PublishCommit
+            - ReconcileCommit
+            - ReleaseRepoLock
+            - cli-io
+        - id: request-invalid
+          statement: Invalid boundary input is rejected before repository effects.
+          when:
+            equals:
+              left:
+                observation: outcome-kind
+              right:
+                literal: invalid-request
+          outcome:
+            kind: rejected
+            category: invalid-request
+            expression:
+              equals:
+                left:
+                  observation: outcome-kind
+                right:
+                  literal: invalid-request
+          ensures: []
+          permits:
+            state_changes: []
+            events: []
+            effects: []
+        - id: operation-error
+          statement: An admitted operation returns a typed error. Recovery work or a partially applied journal can exist; the error does not claim a no-mutation outcome.
+          when:
+            equals:
+              left:
+                observation: outcome-kind
+              right:
+                literal: operation-error
+          outcome:
+            kind: rejected
+            category: operation-error
+            expression:
+              equals:
+                left:
+                  observation: outcome-kind
+                right:
+                  literal: operation-error
+          ensures: []
+          permits:
+            state_changes:
+            - /repository
+            - /journal
+            - /git
+            - /resources
+            events: []
+            effects:
+            - AcquireRepoLock
+            - InspectRepository
+            - InspectJournal
+            - RollbackJournal
+            - CleanupJournal
+            - ReadSnapshot
+            - PersistJournal
+            - ApplyFilesystemPlan
+            - PersistCompletion
+            - InspectGit
+            - PublishCommit
+            - ReconcileCommit
+            - ReleaseRepoLock
+            - cli-io
+        invariants: []
+        case_policy:
+          coverage: exhaustive
+          overlap: forbidden
+    protocol: null
+  remove: []
+properties: null
+hunt_exceptions: null
+proof_delegations: null
+trace_producers: null
+probe: null
+semantic_functions: null
+implementation_commands: null
+machine:
+  execution_binding: null
+  mode: ''
+  initial_state: null
+  justification: null
+  transition_signature: null
+  driver_function: null
+  transition_record_function: null
+  states:
+    set: null
+    add: []
+    remove: []
+  commands:
+    set: null
+    add:
+    - Search
+    remove: []
+  observed_events:
+    set: null
+    add: []
+    remove: []
+  events:
+    set: null
+    add: []
+    remove: []
+  effects:
+    set: null
+    add: []
+    remove: []
+  effect_results:
+    set: null
+    add: []
+    remove: []
+  replies:
+    set: null
+    add: []
+    remove: []
+  rejections:
+    set: null
+    add: []
+    remove: []
+  effect_protocols:
+    set: null
+    add: []
+    remove: []
+  resource_protocols:
+    set: null
+    add: []
+    remove: []
+  transitions:
+    set: null
+    add:
+    - from: Ready
+      on: Search
+      to: AcquiringLock
+      case: begin_search
+      events: []
+      commands: []
+      effects:
+      - AcquireRepoLock
+      reply: null
+      rejection: null
+      no_reply_justification: Repository lock result is pending.
+    remove: []
+roles: null
+representation: null
+allowed_missing_constructors: null
+evidence:
+  add:
+  - kind: law
+    proves: reusable-native-facade
+    path: verification/laws/search_facade.md
+  - kind: contract
+    proves: memoria-memory
+    path: verification/contracts/search_memory.md
+  - kind: contract
+    proves: batch-recovery
+    path: verification/contracts/search_cli.md
+  remove: []
+surfaces: null
+binding_dependencies: null
+artifacts: null
+transformations: null
+authorities: null
+protocol_bindings: null
+authority_bindings: null
+public_behavior_bindings:
+  set:
+  - id: memoria-library-public
+    public_kind: capability
+    public_name: memoria-memory
+    contract: contracts/memoria-memory.v1.yaml
+    semantic_function: transition-model
+    machine_inputs:
+    - Init
+    - Open
+    - Read
+    - Write
+    - Delete
+    - Exists
+    - List
+    - ReadMetadata
+    - Apply
+    - BuildContext
+    - Tree
+    - Status
+    - Diff
+    - Commit
+    - Search
+    - Log
+    machine_outputs:
+    - OperationResult
+    - InvalidRequest
+    - OperationError
+    - IllegalTransition
+    observation_source:
+      kind: transition-record
+      command: trace
+  - id: memoria-cli-public
+    public_kind: command
+    public_name: batch-recovery
+    contract: contracts/batch-recovery.v1.yaml
+    semantic_function: transition-model
+    machine_inputs:
+    - Init
+    - Open
+    - Read
+    - Write
+    - Delete
+    - Exists
+    - List
+    - ReadMetadata
+    - Apply
+    - BuildContext
+    - Tree
+    - Status
+    - Diff
+    - Commit
+    - Search
+    - Log
+    machine_outputs:
+    - OperationResult
+    - InvalidRequest
+    - OperationError
+    - IllegalTransition
+    observation_source:
+      kind: transition-record
+      command: trace
+  add: []
+  remove: []
+dependency_behavior_bindings: null

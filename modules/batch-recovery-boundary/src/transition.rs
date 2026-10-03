@@ -95,6 +95,13 @@ pub fn transition_record(
             None,
             "begin_read",
         ),
+        (S::Ready, Command(C::Search)) => (
+            S::AcquiringLock,
+            Some(E::AcquireRepoLock),
+            None,
+            None,
+            "begin_search",
+        ),
         (S::Ready, Command(C::Write)) => (
             S::AcquiringLock,
             Some(E::AcquireRepoLock),

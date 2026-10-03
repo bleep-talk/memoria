@@ -482,6 +482,7 @@ architecture:
     - Commit
     - Log
     - InvalidRequestInput
+    - Search
     observed_events: []
     events: []
     effects:
@@ -1023,6 +1024,13 @@ architecture:
       case: provider_continues_rollback
       effects:
       - RollbackJournal
+    - from: Ready
+      on: Search
+      to: AcquiringLock
+      case: begin_search
+      effects:
+      - AcquireRepoLock
+      no_reply_justification: Repository lock result is pending.
     driver_function: src/driver.rs#drive
   surfaces:
   - name: memoria
@@ -1092,6 +1100,7 @@ architecture:
     - Status
     - Diff
     - Commit
+    - Search
     - Log
     machine_outputs:
     - OperationResult
@@ -1121,6 +1130,7 @@ architecture:
     - Status
     - Diff
     - Commit
+    - Search
     - Log
     machine_outputs:
     - OperationResult
@@ -1269,6 +1279,8 @@ architecture:
   allowed_missing_constructors:
   - BatchReceipt
   - MemoryFile
+  - SearchMatch
+  - SearchResult
 semantic_functions:
 - id: transition-model
   symbol: src/transition.rs#transition
@@ -1532,7 +1544,7 @@ semantic_functions:
   - filesystem
 x-rms:
   semantic_revision:
-    digest: sha256:a2684fda3fe6afdf162b8013ffe5bd26dd7d9a1ce2c3eccff4d3e71ffc2e8923
-    change_record: verification/changes/record-producer-created-public-result-types-without-public-constructors-b26e33ff0965.yaml
-    change_record_digest: sha256:b26e33ff0965856e26ced58ef23cd4336cbb746fe8aca0d2b4fcfd8bd1670773
+    digest: sha256:f3805e23caf4700a311b6887276b312a18cfb414cb7d0f24d370bf75e359b0c0
+    change_record: verification/changes/record-searchmatch-and-searchresult-as-repository-produced-read-results-e4e491681f53.yaml
+    change_record_digest: sha256:e4e491681f5385d9afb5282c92a0739d68531d987e2dd4ce16e72fe6a257217f
     applied_by: rms spec apply

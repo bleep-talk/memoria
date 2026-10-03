@@ -21,6 +21,7 @@ fn every_public_operation_acquires_the_repository_lock_first() {
         Command::Init,
         Command::Open,
         Command::Read,
+        Command::Search,
         Command::Write,
         Command::Delete,
         Command::Exists,
@@ -310,6 +311,7 @@ pub fn generate_native_operations() -> Vec<Command> {
         Command::Init,
         Command::Open,
         Command::Read,
+        Command::Search,
         Command::Write,
         Command::Delete,
         Command::Exists,
@@ -338,6 +340,61 @@ fn check_public_operations() {
     let invalid = transition_record(State::Ready, Input::Command(Command::InvalidRequestInput));
     assert!(invalid.output.effects.is_empty());
     assert!(invalid.output.rejection.is_some());
+}
+
+#[test]
+fn search_is_literal_ordered_bounded_and_confined() {
+    use memoria_memory::{ExpectedContent, MemoryRepo};
+    let temp = tempfile::tempdir().unwrap();
+    let repo = MemoryRepo::init(temp.path().join("memory")).unwrap();
+    repo.write(
+        "knowledge/z.md",
+        "first Rust\nsecond Rust\n",
+        ExpectedContent::Absent,
+    )
+    .unwrap();
+    repo.write(
+        "conversations/a.md",
+        "---\ndescription: test\n---\nRust\n",
+        ExpectedContent::Absent,
+    )
+    .unwrap();
+    repo.write(
+        "skills/é.md",
+        &format!("{}Rust{}\nmémoire\n", "é".repeat(700), "b".repeat(700)),
+        ExpectedContent::Absent,
+    )
+    .unwrap();
+
+    let result = repo.search("Rust", 2).unwrap();
+    assert!(result.limited());
+    assert_eq!(result.matches().len(), 2);
+    assert_eq!(result.matches()[0].path(), "conversations/a.md");
+    assert_eq!(result.matches()[0].line(), 4);
+    assert_eq!(result.matches()[1].path(), "knowledge/z.md");
+    assert_eq!(result.matches()[1].line(), 1);
+    assert!(!result.matches()[0].truncated());
+
+    let full = repo.search("Rust", 10).unwrap();
+    assert!(!full.limited());
+    assert_eq!(full.matches().len(), 4);
+    assert_eq!(full.matches()[3].path(), "skills/é.md");
+    assert!(full.matches()[3].truncated());
+    assert!(full.matches()[3].text().contains("Rust"));
+    assert!(full.matches()[3].text().len() <= 512);
+    assert_eq!(repo.search("mémoire", 10).unwrap().matches()[0].line(), 2);
+    assert!(repo.search("rust", 10).unwrap().matches().is_empty());
+    assert_eq!(repo.search("", 10).unwrap_err().code(), "invalid_request");
+    assert_eq!(
+        repo.search("Rust", 0).unwrap_err().code(),
+        "invalid_request"
+    );
+
+    std::fs::write(temp.path().join("memory/knowledge/bad.md"), "---\nbad: [\n").unwrap();
+    assert_eq!(
+        repo.search("Rust", 10).unwrap_err().code(),
+        "invalid_request"
+    );
 }
 
 pub fn generate_requests() -> Vec<String> {

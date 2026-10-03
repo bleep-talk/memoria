@@ -3,7 +3,7 @@ module:
   name: batch-recovery
   version: 0.1.0
   kind: composite
-  purpose: Implement Memoria as a standalone Rust memory library and thin CLI. MemoryRepo exposes init, open, read, write, delete, exists, list, read_metadata, apply, build_context, tree, status, diff, commit and log. The domain owns relative Markdown paths, host-owned policy, expected content hashes, deterministic bounded JSON context and tree projections, batch validation, and the recoverable batch lifecycle. A native Rust boundary owns directory-relative no-follow filesystem access, a repository lock, a bounded durable recovery journal under .git, fsync and atomic replacements, and git2 version history with fenced commit publication. Pure decisions and recovery transitions receive typed observed facts and emit typed effect requests; dedicated executors perform IO and return facts. Expose the reusable library public facade and bind a CLI to that facade. Ordinary Markdown and Git remain inspectable; system, knowledge, skills and conversations are default roots. Reject stale writes and protect system/identity.md and system/policy.md. Roll back incomplete batches; completed batches only need cleanup; preserve unexpected external edits with RecoveryConflict. No search, LLM, networking, checkout or automatic intelligence. Support macOS and Linux local filesystems. Provide property, fault-injection, process-crash, native integration and external package-consumer proof.
+  purpose: Implement Memoria as a standalone Rust memory library and thin CLI. MemoryRepo exposes init, open, read, write, delete, exists, list, read_metadata, apply, build_context, tree, status, diff, commit, log, and bounded literal search. The domain owns relative Markdown paths, host-owned policy, expected content hashes, deterministic bounded JSON context and tree projections, batch validation, and the recoverable batch lifecycle. A native Rust boundary owns directory-relative no-follow filesystem access, a repository lock, a bounded durable recovery journal under .git, fsync and atomic replacements, and git2 version history with fenced commit publication. Pure decisions and recovery transitions receive typed observed facts and emit typed effect requests; dedicated executors perform IO and return facts. Expose the reusable library public facade and bind a CLI to that facade. Ordinary Markdown and Git remain inspectable; system, knowledge, skills and conversations are default roots. Reject stale writes and protect system/identity.md and system/policy.md. Roll back incomplete batches; completed batches only need cleanup; preserve unexpected external edits with RecoveryConflict. No LLM, networking, checkout or automatic intelligence. Support macOS and Linux local filesystems. Provide property, fault-injection, process-crash, native integration and external package-consumer proof.
 profiles:
 - core
 owns:
@@ -51,6 +51,7 @@ verification:
   contracts:
   - verification/contracts/parent_export.md
   - verification/contracts/batch-recovery.md
+  - verification/contracts/search_export.md
   scenarios:
   - verification/scenarios/composed_capability.md
   boundaries: []
@@ -62,9 +63,9 @@ x-scaffold:
   - visibility-boundaries
   - composition-evidence
 x-rms:
-  last_semantic_intent: Synchronize the composite public batch-recovery command with the existing Memoria boundary CLI contract.
+  last_semantic_intent: Export the bounded read-only search command from the Memoria boundary.
   semantic_revision:
-    digest: sha256:e9822c8abb5711b1501ba948bd09b0a225d23410141c16f589d707c5f153b6d8
-    change_record: verification/changes/synchronize-the-composite-public-batch-recovery-command-with-the-existing-memoria-boundary-cli-contract-5ff66b122a59.yaml
-    change_record_digest: sha256:5ff66b122a596c6908bd35cc5f5bc3d813c40a87d8c8b22ea641ce8b6674a338
+    digest: sha256:8d80c7abc78e52fbe0064a5f643ebb6190141506e89cf132250480a928f8f870
+    change_record: verification/changes/export-the-bounded-read-only-search-command-from-the-memoria-boundary-358041510de6.yaml
+    change_record_digest: sha256:358041510de6a77e0368615a8394810a72f935563b908b2c553ab49c99cbbbb9
     applied_by: rms spec apply

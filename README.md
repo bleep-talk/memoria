@@ -35,6 +35,7 @@ The agent also needs the `memoria` binary on its `PATH` and an explicit memory r
 - Public Rust library: `memoria-memory`.
 - Platforms: macOS and Linux, on local filesystems.
 - Memory stays inspectable through ordinary editors, filesystem tools, and Git.
-- Search, LLM calls, automatic learning, network synchronization, checkout, and package publication are outside v1.
+- `search` finds bounded literal matches in managed Markdown. It creates no index.
+- LLM calls, automatic learning, network synchronization, checkout, and package publication are outside v1.
 
 See [the implementation brief](docs/IMPLEMENTATION.md) for the accepted requirements. RMS module contracts own the executable semantics once applied.
