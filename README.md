@@ -10,13 +10,13 @@ Your agent chooses what to save and when to recall it. You can open the files, r
 
 ## Get started
 
-Memoria runs on macOS and Linux. Homebrew installation is being prepared:
+Install with Homebrew on macOS or Linux:
 
 ```sh
 brew install bleep-talk/tap/memoria
 ```
 
-Until then, install from this checkout with [Rust and Cargo](https://www.rust-lang.org/tools/install):
+To build from source, install from this checkout with [Rust and Cargo](https://www.rust-lang.org/tools/install):
 
 ```sh
 cargo install --path modules/batch-recovery-boundary/cli --locked
