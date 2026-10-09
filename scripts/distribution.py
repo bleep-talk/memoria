@@ -53,6 +53,8 @@ def smoke(binary):
     with tempfile.TemporaryDirectory(prefix="memoria-smoke-") as temp:
         repo = str(Path(temp) / "memory")
         run(str(binary), "init", repo, stdout=subprocess.DEVNULL)
+        run("git", "-C", repo, "config", "user.name", "Memoria package check")
+        run("git", "-C", repo, "config", "user.email", "check@example.invalid")
         args = (str(binary), "--repo", repo, "--json")
         run(*args, "write", "system/user.md", "--expect", "absent",
             input="The user prefers short answers.\n", stdout=subprocess.DEVNULL)
@@ -112,7 +114,7 @@ def build(output):
         (package / "docs").mkdir()
         readme = (ROOT / "README.md").read_text()
         readme = readme.replace("(skills/memoria/SKILL.md)", "(share/memoria/skill/SKILL.md)")
-        readme = readme.replace("(modules/batch-recovery-boundary/USAGE.md)", "(docs/CLI.md)")
+        readme = readme.replace("modules/batch-recovery-boundary/USAGE.md", "docs/CLI.md")
         (package / "README.md").write_text(readme)
         shutil.copy2(ROOT / "LICENSE", package / "LICENSE")
         shutil.copy2(ROOT / "docs/STATUS.md", package / "docs/STATUS.md")

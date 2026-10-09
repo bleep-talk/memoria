@@ -24,3 +24,16 @@ memoria --repo ./memory log
 ```
 
 Each command accepts `--repo <directory>`. Without it, Memoria discovers the containing Git repository from the current directory. `--json` prints successful results as `{"schema_version":1,"data":...}` on stdout. It prints failures as `{"schema_version":1,"error":{"code":"...","message":"..."}}` on stderr and exits nonzero.
+
+## Git history
+
+`commit` uses your Git name and email. After initializing memory, configure them
+for that repository. Replace the example values with your own:
+
+```sh
+git -C ./memory config user.name "Your Name"
+git -C ./memory config user.email "you@example.com"
+```
+
+An existing global Git identity also works. These local settings apply only to
+this memory repository.

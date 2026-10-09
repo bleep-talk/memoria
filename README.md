@@ -30,7 +30,7 @@ printf '%s\n' 'The user prefers short answers.' \
   | memoria --repo ./memory write system/user.md --expect absent
 ```
 
-Read the memory, prepare it for your agent, and save a version:
+Read the memory, prepare it for your agent, and save a version. For commits, [configure your Git name and email](modules/batch-recovery-boundary/USAGE.md#git-history) first:
 
 ```sh
 memoria --repo ./memory read system/user.md
