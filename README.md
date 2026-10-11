@@ -4,14 +4,14 @@ Give your agent a memory.
 
 Keep the preferences, decisions, and discoveries that make the next conversation better.
 
-Memoria started with our own agents. We wanted them to carry useful things from one conversation to the next, with memory we could see and understand. We kept it simple: Markdown for memory, Git for history.
+Memoria started with our own agents. We wanted something simple and minimal: a few commands, readable files, and no extra service to run. Markdown lets us see what our agents remember. Git lets us review how it changes.
 
 ## Features
 
-- **Explain things once.** Save preferences and project decisions for future conversations.
-- **Let agents share memory.** Agents that use Memoria can share one local memory folder. If another agent changed a file since you read it, your update is rejected.
+- **Pick up where you left off.** Keep user preferences, project decisions, and useful discoveries ready for the next conversation.
 - **Keep prompts focused.** Include essentials in each request. Search or browse other memory when needed.
-- **See what your agent remembers.** Read plain Markdown files and track their history with Git.
+- **Give agents shared project knowledge.** Agents on one machine can use the same memory folder. Memoria coordinates writes and rejects stale updates.
+- **Review what your agent remembers.** Open the Markdown files, review changes, and record versions with Git.
 - **Keep setup simple.** Install one local CLI. No database server, hosted service, or model API calls.
 
 ## Get started
@@ -65,7 +65,7 @@ Writes save the files immediately; commits record their history.
 
 ## Connect your agent
 
-Give your agent the `memoria` command, the path to its memory folder, and the [Memoria skill](skills/memoria/SKILL.md). The skill teaches it how to save, find, and update memory.
+Use Memoria with any agent that can run CLI commands. Give it the `memoria` command, the path to its memory folder, and the [Memoria skill](skills/memoria/SKILL.md). The skill teaches it how to save, find, and update memory.
 
 For Codex or Claude Code, copy the skill to `~/.codex/skills/memoria/SKILL.md` or `~/.claude/skills/memoria/SKILL.md`. Homebrew packages it at `$(brew --prefix memoria)/share/memoria/skill/SKILL.md`. Other agents can use the file as instructions.
 
