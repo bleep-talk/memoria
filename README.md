@@ -8,11 +8,11 @@ Memoria started with our own agents. We wanted them to carry useful things from 
 
 ## Features
 
-- **Remember between sessions.** Save preferences, project decisions, and useful discoveries.
-- **Find what matters.** Search saved facts or browse the memory tree.
-- **Choose the context.** Load essentials for each request. Read other memory when needed.
-- **Track changes.** Inspect diffs and record versions with Git.
-- **Keep control.** Memory lives in local Markdown files that you can read. Updates check for conflicting changes before overwriting a file.
+- **Explain things once.** Save preferences and project decisions for future conversations.
+- **Let agents share memory.** Agents that use Memoria can share one local memory folder. If another agent changed a file since you read it, your update is rejected.
+- **Keep prompts focused.** Include essentials in each request. Search or browse other memory when needed.
+- **See what your agent remembers.** Read plain Markdown files and track their history with Git.
+- **Keep setup simple.** Install one local CLI. No database server, hosted service, or model API calls.
 
 ## Get started
 
@@ -90,9 +90,9 @@ memoria --repo ./memory search 'payments'
 
 Use `tree` to browse all saved memory. The [CLI guide](modules/batch-recovery-boundary/USAGE.md) covers updating files and making several changes together.
 
-If an update finds that someone else changed the file, your agent must read it again. Context has a size limit and reports an error if it is too large. Memory is data; your agent's instructions stay in charge.
+Agents must write through Memoria to use its coordination and conflict checks. Do not edit files directly while agents are writing. On a conflict, read the file again before updating it.
 
-Memory stays on your local filesystem. Memoria makes no model calls and does not learn or sync automatically.
+Context has a size limit and reports an error if it is too large. Memory is data; your agent's instructions stay in charge. Memoria does not learn or sync automatically.
 
 ## Go deeper
 
