@@ -21,6 +21,9 @@ Memoria stores memory. The agent decides what to remember and when to use it. Th
 2. Use `tree --descriptions` to discover other memory. Read only relevant paths. `knowledge/` holds durable facts, `skills/` holds procedures, and `conversations/` holds experience. These roots do not enter context automatically.
 3. Use `search <query>` to find literal, case-sensitive lines across managed Markdown when the path is unknown. Results are ordered by path and line. Check `limited`; narrow the query or inspect relevant files when the result set is capped.
 4. Remember a fact when it is likely to help later or when the user asks. Do not promote a conversation into durable memory automatically. Place frequently needed, compact facts in `system/`; put details that can be fetched on demand in `knowledge/` or `skills/`.
+5. Save useful memory directly. If you already know a relevant note, update it instead of creating a duplicate. Link related notes and record sources when useful. Resolve duplicates or contradictions when you encounter them.
+6. Create subdirectories within the memory roots as topics or projects need them; keep the structure simple.
+7. For each saved discussion, record when it took place in the YAML frontmatter field `discussed_at`. Use a quoted RFC 3339 timestamp with a time-zone offset when available, or a quoted `YYYY-MM-DD` date otherwise. Preserve uncertainty rather than inventing a date or time. Keep separate notes for separate discussions, and preserve the discussion date when revising a note.
 
 ## Mutate and reconcile
 
